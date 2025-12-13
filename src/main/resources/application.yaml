@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: vetcare
+    jackson:
+      time-zone: UTC
+  datasource:
+    url: jdbc:postgresql://localhost:5432/vetcare
+    username: admin
+    password: admin123
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        show_sql: false
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+
+app:
+  security:
+    jwt:
+      secret: "super-secret-one-key-12345678901234567890123456789012"
+      access-token-minutes: 1440
