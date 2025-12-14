@@ -1,6 +1,7 @@
 package com.lucast.vetcare.catalog;
 
 import com.lucast.vetcare.catalog.dto.*;
+import com.lucast.vetcare.catalog.validation.FiscalRulesValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -13,13 +14,16 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final FiscalRulesValidator fiscalRulesValidator;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, FiscalRulesValidator fiscalRulesValidator) {
         this.productRepository = productRepository;
+        this.fiscalRulesValidator = fiscalRulesValidator;
     }
 
     @Transactional
     public ProductResponse create(CreateProductRequest req) {
+        fiscalRulesValidator.validateCreate(req);
         var p = new ProductEntity();
         p.setSku(req.sku());
         p.setName(req.name());
@@ -74,6 +78,8 @@ public class ProductService {
     public ProductResponse update(Long id, UpdateProductRequest req) {
         var p = productRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Product not found"));
+
+        fiscalRulesValidator.validateUpdate(p, req);
 
         if (req.sku() != null) p.setSku(req.sku());
         if (req.name() != null) p.setName(req.name());

@@ -2,6 +2,8 @@ package com.lucast.vetcare.catalog.dto;
 
 import com.lucast.vetcare.common.enums.ItemType;
 import com.lucast.vetcare.common.enums.ProductCategory;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
@@ -14,5 +16,5 @@ public record UpdateProductRequest(
         BigDecimal salePrice,
         BigDecimal costPrice,
         BigDecimal minStock,
-        ProductFiscalRequest fiscal
+        @Valid ProductFiscalRequest fiscal
 ) {}

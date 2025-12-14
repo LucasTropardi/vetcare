@@ -1,5 +1,6 @@
 package com.lucast.vetcare.catalog;
 
+import com.lucast.vetcare.common.enums.FiscalOrigin;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,8 +28,9 @@ public class ProductFiscalEntity {
     @Column(length = 7)
     private String cest;
 
-    @Column(nullable = false, length = 2)
-    private String origin;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origin", nullable = false, length = 20)
+    FiscalOrigin origin;
 
     @Column(name = "gtin_ean", length = 14)
     private String gtinEan;
