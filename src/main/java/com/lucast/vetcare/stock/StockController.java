@@ -1,0 +1,32 @@
+package com.lucast.vetcare.stock;
+
+import com.lucast.vetcare.auth.AuthContext;
+import com.lucast.vetcare.stock.dto.CreateStockMovementRequest;
+import com.lucast.vetcare.stock.dto.ProductStockBalanceResponse;
+import com.lucast.vetcare.stock.dto.StockMovementResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/stock")
+public class StockController {
+
+    private final StockService stockService;
+
+    public StockController(StockService stockService) {
+        this.stockService = stockService;
+    }
+
+    @PostMapping("/movements")
+    @ResponseStatus(HttpStatus.CREATED)
+    public StockMovementResponse create(@RequestBody @Valid CreateStockMovementRequest req) {
+        Long userId = AuthContext.requireUserId();
+        return stockService.createMovement(req, userId);
+    }
+
+    @GetMapping("/balance")
+    public ProductStockBalanceResponse balance(@RequestParam Long productId) {
+        return stockService.getBalance(productId);
+    }
+}

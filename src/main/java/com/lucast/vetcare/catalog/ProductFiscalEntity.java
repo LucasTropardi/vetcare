@@ -1,6 +1,7 @@
 package com.lucast.vetcare.catalog;
 
 import com.lucast.vetcare.common.enums.FiscalOrigin;
+import com.lucast.vetcare.common.jpa.FiscalOriginConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,7 +29,7 @@ public class ProductFiscalEntity {
     @Column(length = 7)
     private String cest;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = FiscalOriginConverter.class)
     @Column(name = "origin", nullable = false, length = 20)
     FiscalOrigin origin;
 

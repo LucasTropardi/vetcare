@@ -38,6 +38,10 @@ public class FiscalRulesValidator {
         // Regras comuns
         validateTribUnitAndFactor(fiscal);
 
+        if (!isBlank(fiscal.cest()) && isBlank(fiscal.ncm())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "cest requires ncm");
+        }
+
         if (itemType == ItemType.PRODUCT) {
             // Obrigatórios para PRODUCT
             if (isBlank(fiscal.ncm())) {
@@ -72,9 +76,6 @@ public class FiscalRulesValidator {
             if (!isBlank(fiscal.gtinEanTrib())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "gtinEanTrib must be null for SERVICE");
             }
-            if (fiscal.origin() != null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "origin must be null for SERVICE");
-            }
             if (!isBlank(fiscal.cbenef())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "cbenef must be null for SERVICE");
             }
@@ -82,14 +83,16 @@ public class FiscalRulesValidator {
     }
 
     private void validateTribUnitAndFactor(ProductFiscalRequest fiscal) {
-        // unitTrib e tribFactor devem andar juntos, ambos null ou ambos preenchidos
         boolean hasUnit = !isBlank(fiscal.unitTrib());
         boolean hasFactor = fiscal.tribFactor() != null;
+        boolean hasGtinTrib = !isBlank(fiscal.gtinEanTrib());
 
-        if (hasUnit ^ hasFactor) {
+        // Se qualquer um apareceu, exige os 3
+        boolean anyTrib = hasUnit || hasFactor || hasGtinTrib;
+        if (anyTrib && !(hasUnit && hasFactor && hasGtinTrib)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "unitTrib and tribFactor must be provided together"
+                    "unitTrib, tribFactor and gtinEanTrib must be provided together"
             );
         }
 

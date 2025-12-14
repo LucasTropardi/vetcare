@@ -31,3 +31,4 @@ public record ProductFiscalRequest(
         @Size(max = 20, message = "serviceListCode max length is 20")
         String serviceListCode
 ) {}
+
