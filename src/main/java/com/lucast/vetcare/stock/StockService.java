@@ -4,8 +4,12 @@ import com.lucast.vetcare.catalog.ProductRepository;
 import com.lucast.vetcare.common.enums.ItemType;
 import com.lucast.vetcare.common.enums.StockMovementType;
 import com.lucast.vetcare.stock.dto.CreateStockMovementRequest;
+import com.lucast.vetcare.stock.dto.ProductStockBalanceListDTO;
 import com.lucast.vetcare.stock.dto.ProductStockBalanceResponse;
 import com.lucast.vetcare.stock.dto.StockMovementResponse;
+import org.springframework.data.domain.Page;
+
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Set;
 
 @Service
 public class StockService {
@@ -114,42 +119,129 @@ public class StockService {
 
     private void validateMovementRules(CreateStockMovementRequest req) {
         if (req.quantity() == null || req.quantity().compareTo(BigDecimal.ZERO) == 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "quantity must be non-zero");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "quantity must be non-zero"
+            );
         }
 
         switch (req.movementType()) {
+
             case ENTRY_PURCHASE -> {
                 if (req.quantity().compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ENTRY_PURCHASE quantity must be > 0");
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "ENTRY_PURCHASE quantity must be > 0"
+                    );
                 }
                 if (req.unitCost() == null || req.unitCost().compareTo(BigDecimal.ZERO) < 0) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ENTRY_PURCHASE unitCost must be >= 0");
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "ENTRY_PURCHASE unitCost must be >= 0"
+                    );
                 }
             }
+
             case EXIT_SALE, EXIT_VISIT_CONSUMPTION -> {
                 if (req.quantity().compareTo(BigDecimal.ZERO) >= 0) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "EXIT quantity must be < 0");
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "EXIT quantity must be < 0"
+                    );
                 }
                 if (req.unitCost() != null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "EXIT movements must not receive unitCost");
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "EXIT movements must not receive unitCost"
+                    );
                 }
             }
+
             case ADJUSTMENT -> {
                 if (req.unitCost() != null && req.unitCost().compareTo(BigDecimal.ZERO) < 0) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "unitCost must be >= 0");
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "unitCost must be >= 0"
+                    );
+                }
+                if (req.notes() == null || req.notes().trim().isEmpty()) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "notes is required for ADJUSTMENT"
+                    );
                 }
             }
         }
 
-        if (req.referenceType() != null) {
-            var ok = switch (req.referenceType()) {
-                case "PURCHASE", "SALE", "VISIT", "MANUAL", "IMPORT" -> true;
-                default -> false;
-            };
-            if (!ok) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid referenceType");
+        String refType = req.referenceType() == null
+                ? null
+                : req.referenceType().trim().toUpperCase();
+
+        if (refType == null && req.referenceId() != null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "referenceType is required when referenceId is provided"
+            );
+        }
+
+        if (refType != null) {
+
+            var allowedTypes = Set.of(
+                    "PURCHASE",
+                    "SALE",
+                    "VISIT",
+                    "MANUAL",
+                    "IMPORT",
+                    "REVERSAL"
+            );
+
+            if (!allowedTypes.contains(refType)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Invalid referenceType"
+                );
+            }
+
+            var needsIdTypes = Set.of(
+                    "PURCHASE",
+                    "SALE",
+                    "VISIT",
+                    "REVERSAL"
+            );
+
+            if (needsIdTypes.contains(refType) && req.referenceId() == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "referenceId is required for this referenceType"
+                );
             }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<StockMovementResponse> listMovements(Long productId, Pageable pageable) {
+        Page<StockMovementEntity> page =
+                (productId == null)
+                        ? movementRepository.findAll(pageable)
+                        : movementRepository.findByProduct_Id(productId, pageable);
+
+        return page.map(m -> new StockMovementResponse(
+                m.getId(),
+                m.getProduct().getId(),
+                m.getMovementType(),
+                m.getQuantity(),
+                m.getUnitCost(),
+                m.getNotes(),
+                m.getReferenceType(),
+                m.getReferenceId(),
+                m.getCreatedBy(),
+                m.getCreatedAt()
+        ));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductStockBalanceListDTO> listBalances(String query, Boolean belowMinStock, Pageable pageable) {
+        return balanceRepository.listBalances(query, belowMinStock, pageable);
     }
 
     private BigDecimal nvl(BigDecimal v) {
