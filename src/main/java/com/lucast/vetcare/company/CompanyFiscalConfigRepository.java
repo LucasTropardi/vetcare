@@ -1,0 +1,6 @@
+package com.lucast.vetcare.company;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CompanyFiscalConfigRepository extends JpaRepository<CompanyFiscalConfigEntity, Long> {
+}

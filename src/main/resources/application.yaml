@@ -39,3 +39,25 @@ app:
     jwt:
       secret: "super-secret-one-key-12345678901234567890123456789012"
       access-token-minutes: 1440
+
+  fiscal:
+    ambiente: HOMOLOGACAO # HOMOLOGACAO|PRODUCAO
+    uf: SP
+    certificado:
+      tipo: A1
+      caminho: ""
+      senha: ""
+    nfce:
+      idTokenCsc: "" # CSC Id
+      csc: ""       # CSC
+    emitente:
+      cnpj: ""         # 14 dígitos
+      ie: ""
+      razaoSocial: ""
+      fantasia: ""
+      logradouro: ""
+      numero: ""
+      bairro: ""
+      cMun: ""         # código IBGE do município
+      xMun: ""
+      cep: ""          # 8 dígitos

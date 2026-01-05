@@ -191,6 +191,24 @@ public class SaleService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Sale must have at least one item");
         }
 
+        // Regra de fechamento: só confirma (fecha) venda se estiver totalmente paga
+        boolean hasPending = paymentRepository.findBySale_Id(saleId).stream().anyMatch(p -> p.getStatus() == PaymentStatus.PENDING);
+        if (hasPending) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Sale has pending payments");
+        }
+
+        BigDecimal paidSoFar = paymentRepository.findBySale_Id(saleId).stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PAID)
+                .map(SalePaymentEntity::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal total = nvl(sale.getTotal()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal remaining = total.subtract(paidSoFar).setScale(2, RoundingMode.HALF_UP);
+        if (remaining.compareTo(BigDecimal.ZERO) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Sale cannot be confirmed until fully paid. Remaining: " + remaining);
+        }
+
         for (var it : sale.getItems()) {
             if (it.getItemType() == ItemType.PRODUCT) {
                 stockService.createMovement(
@@ -268,24 +286,54 @@ public class SaleService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Canceled sale cannot receive payments");
         }
 
-        var amount = req.amount();
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+        // Regra POS: pagamento só é lançado de forma consistente (nunca "pendente" sem querer).
+        // - Sempre gravamos como PAID (se no futuro precisar PENDING, criamos um endpoint específico)
+        // - Se for dinheiro, permitimos valor maior e calculamos troco
+        // - Se for cartão/pix/etc, não permitimos exceder o valor restante
+
+        var amountReceived = req.amount();
+        if (amountReceived == null || amountReceived.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "amount must be > 0");
+        }
+
+        BigDecimal paidSoFar = paymentRepository.findBySale_Id(saleId).stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PAID)
+                .map(SalePaymentEntity::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal total = nvl(sale.getTotal()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal remaining = total.subtract(paidSoFar).setScale(2, RoundingMode.HALF_UP);
+        if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Sale is already fully paid");
+        }
+
+        BigDecimal amountApplied = amountReceived.setScale(2, RoundingMode.HALF_UP);
+        String notes = blankToNull(req.notes());
+
+        if (req.method() == PaymentMethod.CASH) {
+            // dinheiro: se passou do restante, calcula troco e aplica somente o restante
+            if (amountApplied.compareTo(remaining) > 0) {
+                BigDecimal change = amountApplied.subtract(remaining).setScale(2, RoundingMode.HALF_UP);
+                amountApplied = remaining;
+                String auto = "received=" + amountReceived.setScale(2, RoundingMode.HALF_UP) + ", change=" + change;
+                notes = (notes == null) ? auto : (notes + " | " + auto);
+            }
+        } else {
+            // outros meios: não pode exceder o restante
+            if (amountApplied.compareTo(remaining) > 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment amount exceeds remaining: " + remaining);
+            }
         }
 
         var pay = new SalePaymentEntity();
         pay.setSale(sale);
         pay.setMethod(req.method());
-        pay.setAmount(amount.setScale(2, RoundingMode.HALF_UP));
+        pay.setAmount(amountApplied);
         pay.setCreatedBy(userId);
 
-        if (req.status() != null) {
-            pay.setStatus(req.status());
-        }
-
-        if (req.notes() != null) {
-            pay.setNotes(blankToNull(req.notes()));
-        }
+        pay.setStatus(PaymentStatus.PAID);
+        pay.setNotes(notes);
 
         var saved = paymentRepository.save(pay);
         return toPaymentResponse(saved);
