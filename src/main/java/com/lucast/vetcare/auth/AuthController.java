@@ -2,6 +2,8 @@ package com.lucast.vetcare.auth;
 
 import com.lucast.vetcare.auth.dto.LoginRequest;
 import com.lucast.vetcare.auth.dto.LoginResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,6 +12,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(
+        name = "Authentication",
+        description = "Authentication and authorization endpoints"
+)
 public class AuthController {
 
     private final UserRepository userRepository;
@@ -22,6 +28,10 @@ public class AuthController {
         this.jwtService = jwtService;
     }
 
+    @Operation(
+            summary = "User login",
+            description = "Authenticate user using email and password and return a JWT access token"
+    )
     @PostMapping("/login")
     public LoginResponse login(@RequestBody @Valid LoginRequest request) {
         var user = userRepository.findByEmail(request.email())

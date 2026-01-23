@@ -2,7 +2,10 @@ package com.lucast.vetcare.clinic;
 
 import com.lucast.vetcare.clinic.dto.*;
 import com.lucast.vetcare.common.enums.AppointmentStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -10,6 +13,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/appointments")
+@Tag(
+        name = "Appointments",
+        description = "Operations related to veterinary appointments and medical records"
+)
 public class AppointmentController {
 
     private final AppointmentService service;
@@ -20,26 +27,42 @@ public class AppointmentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(
+            summary = "Open appointment",
+            description = "Open a new veterinary appointment"
+    )
     public AppointmentResponse open(@RequestBody @Valid OpenAppointmentRequest req) {
         return service.open(req);
     }
 
     @GetMapping("/{id}")
+    @Operation(
+            summary = "Get appointment by ID",
+            description = "Retrieve an appointment by its ID"
+    )
     public AppointmentResponse getById(@PathVariable Long id) {
         return service.getById(id);
     }
 
     @GetMapping
+    @Operation(
+            summary = "List appointments",
+            description = "List appointments with pagination, sorting and optional filters"
+    )
     public Page<AppointmentResponse> list(
             @RequestParam(required = false) Long petId,
             @RequestParam(required = false) Long vetUserId,
             @RequestParam(required = false) AppointmentStatus status,
-            Pageable pageable
+            @ParameterObject Pageable pageable
     ) {
         return service.list(petId, vetUserId, status, pageable);
     }
 
     @PatchMapping("/{id}/assign-vet")
+    @Operation(
+            summary = "Assign veterinarian",
+            description = "Assign a veterinarian to an appointment"
+    )
     public AppointmentResponse assignVet(
             @PathVariable Long id,
             @RequestParam Long veterinarianUserId
@@ -48,48 +71,96 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{id}/finish")
+    @Operation(
+            summary = "Finish appointment",
+            description = "Finish an appointment"
+    )
     public AppointmentResponse finish(@PathVariable Long id) {
         return service.finish(id);
     }
 
     @PatchMapping("/{id}/cancel")
-    public AppointmentResponse cancel(@PathVariable Long id, @RequestBody @Valid CancelAppointmentRequest req) {
+    @Operation(
+            summary = "Cancel appointment",
+            description = "Cancel an appointment"
+    )
+    public AppointmentResponse cancel(
+            @PathVariable Long id,
+            @RequestBody @Valid CancelAppointmentRequest req
+    ) {
         return service.cancel(id, req);
     }
 
-    // --------- prontuário ---------
-
     @GetMapping("/{id}/medical-record")
+    @Operation(
+            summary = "Get medical record",
+            description = "Retrieve the medical record of an appointment"
+    )
     public MedicalRecordResponse getMedicalRecord(@PathVariable Long id) {
         return service.getMedicalRecord(id);
     }
 
     @PutMapping("/{id}/medical-record")
-    public MedicalRecordResponse upsertMedicalRecord(@PathVariable Long id, @RequestBody @Valid UpsertMedicalRecordRequest req) {
+    @Operation(
+            summary = "Upsert medical record",
+            description = "Create or update the medical record of an appointment"
+    )
+    public MedicalRecordResponse upsertMedicalRecord(
+            @PathVariable Long id,
+            @RequestBody @Valid UpsertMedicalRecordRequest req
+    ) {
         return service.upsertMedicalRecord(id, req);
     }
 
     @PostMapping("/{id}/diagnoses")
     @ResponseStatus(HttpStatus.CREATED)
-    public DiagnosisResponse addDiagnosis(@PathVariable Long id, @RequestBody @Valid AddDiagnosisRequest req) {
+    @Operation(
+            summary = "Add diagnosis",
+            description = "Add a diagnosis to an appointment medical record"
+    )
+    public DiagnosisResponse addDiagnosis(
+            @PathVariable Long id,
+            @RequestBody @Valid AddDiagnosisRequest req
+    ) {
         return service.addDiagnosis(id, req);
     }
 
     @DeleteMapping("/{id}/diagnoses/{diagnosisId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteDiagnosis(@PathVariable Long id, @PathVariable Long diagnosisId) {
+    @Operation(
+            summary = "Delete diagnosis",
+            description = "Delete a diagnosis from an appointment medical record"
+    )
+    public void deleteDiagnosis(
+            @PathVariable Long id,
+            @PathVariable Long diagnosisId
+    ) {
         service.deleteDiagnosis(id, diagnosisId);
     }
 
     @PostMapping("/{id}/procedures")
     @ResponseStatus(HttpStatus.CREATED)
-    public ProcedureResponse addProcedure(@PathVariable Long id, @RequestBody @Valid AddProcedureRequest req) {
+    @Operation(
+            summary = "Add procedure",
+            description = "Add a procedure to an appointment medical record"
+    )
+    public ProcedureResponse addProcedure(
+            @PathVariable Long id,
+            @RequestBody @Valid AddProcedureRequest req
+    ) {
         return service.addProcedure(id, req);
     }
 
     @DeleteMapping("/{id}/procedures/{procedureId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteProcedure(@PathVariable Long id, @PathVariable Long procedureId) {
+    @Operation(
+            summary = "Delete procedure",
+            description = "Delete a procedure from an appointment medical record"
+    )
+    public void deleteProcedure(
+            @PathVariable Long id,
+            @PathVariable Long procedureId
+    ) {
         service.deleteProcedure(id, procedureId);
     }
 }
