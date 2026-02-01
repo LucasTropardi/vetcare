@@ -146,6 +146,22 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
+    public void deleteOldSchool(Long id) {
+        requireAdmin();
+
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // bloquear auto-delete do admin logado
+        var current = AuthContext.requireUser();
+        if (current.getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot deactivate your own user");
+        }
+
+        userRepository.deleteById(id);
+    }
+
     private void requireAdmin() {
         var u = AuthContext.requireUser();
         if (u.getRole() != Role.ADMIN) {

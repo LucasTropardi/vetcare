@@ -95,4 +95,14 @@ public class UserController {
     public void delete(@PathVariable Long id) {
         userService.deleteLogical(id);
     }
+
+    @DeleteMapping("delete/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+            summary = "Delete user",
+            description = "Delete a user by ID"
+    )
+    public void deleteOldSchool(@PathVariable Long id) {
+        userService.deleteOldSchool(id);
+    }
 }
