@@ -3,6 +3,7 @@ package com.lucast.vetcare.sales;
 import com.lucast.vetcare.auth.AuthContext;
 import com.lucast.vetcare.catalog.ProductRepository;
 import com.lucast.vetcare.common.enums.*;
+import com.lucast.vetcare.customers.company.CustomerCompanyRepository;
 import com.lucast.vetcare.sales.dto.*;
 import com.lucast.vetcare.stock.StockService;
 import com.lucast.vetcare.stock.dto.CreateStockMovementRequest;
@@ -24,19 +25,22 @@ public class SaleService {
     private final ProductRepository productRepository;
     private final StockService stockService;
     private final SalePaymentRepository paymentRepository;
+    private final CustomerCompanyRepository customerCompanyRepository;
 
     public SaleService(
             SaleRepository saleRepository,
             SaleItemRepository saleItemRepository,
             ProductRepository productRepository,
             StockService stockService,
-            SalePaymentRepository paymentRepository
+            SalePaymentRepository paymentRepository,
+            CustomerCompanyRepository customerCompanyRepository
     ) {
         this.saleRepository = saleRepository;
         this.saleItemRepository = saleItemRepository;
         this.productRepository = productRepository;
         this.stockService = stockService;
         this.paymentRepository = paymentRepository;
+        this.customerCompanyRepository = customerCompanyRepository;
     }
 
     @Transactional
@@ -45,6 +49,14 @@ public class SaleService {
 
         if (req.tutorId() != null && req.customerCompanyId() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provide tutorId OR customerCompanyId, not both");
+        }
+
+        if (req.customerCompanyId() != null) {
+            var company = customerCompanyRepository.findById(req.customerCompanyId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer company not found"));
+            if (!company.isActive()) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Inactive customer company cannot be used");
+            }
         }
 
         if (req.appointmentId() != null) {
@@ -75,6 +87,43 @@ public class SaleService {
         var s = saleRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sale not found for appointment"));
         return toResponse(s);
+    }
+
+    @Transactional
+    public SaleResponse update(Long id, UpdateSaleRequest req) {
+        var sale = getOrThrow(id);
+        requireDraft(sale);
+
+        if (req.clearRecipient() && (req.tutorId() != null || req.customerCompanyId() != null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "clearRecipient cannot be combined with tutorId/customerCompanyId");
+        }
+
+        if (req.clearRecipient()) {
+            sale.setTutorId(null);
+            sale.setCustomerCompanyId(null);
+        }
+
+        boolean hasRecipientChange = req.tutorId() != null || req.customerCompanyId() != null;
+        if (hasRecipientChange) {
+            if (req.tutorId() != null && req.customerCompanyId() != null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provide tutorId OR customerCompanyId, not both");
+            }
+            if (req.customerCompanyId() != null) {
+                var company = customerCompanyRepository.findById(req.customerCompanyId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer company not found"));
+                if (!company.isActive()) {
+                    throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Inactive customer company cannot be used");
+                }
+            }
+            sale.setTutorId(req.tutorId());
+            sale.setCustomerCompanyId(req.customerCompanyId());
+        }
+
+        if (req.notes() != null) {
+            sale.setNotes(blankToNull(req.notes()));
+        }
+
+        return toResponse(saleRepository.save(sale));
     }
 
     @Transactional

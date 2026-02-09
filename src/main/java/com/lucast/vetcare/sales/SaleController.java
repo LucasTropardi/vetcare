@@ -51,6 +51,18 @@ public class SaleController {
         return service.getByAppointment(appointmentId);
     }
 
+    @PatchMapping("/{id}")
+    @Operation(
+            summary = "Update sale",
+            description = "Updates sale recipient or notes (draft only)"
+    )
+    public SaleResponse update(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateSaleRequest req
+    ) {
+        return service.update(id, req);
+    }
+
     @PostMapping("/{id}/items")
     @Operation(
             summary = "Add sale item",

@@ -3,6 +3,8 @@ package com.lucast.vetcare.fiscal.nfce;
 import com.lucast.vetcare.fiscal.FiscalProperties;
 import com.lucast.vetcare.fiscal.issuer.IssuerData;
 import com.lucast.vetcare.fiscal.issuer.IssuerService;
+import com.lucast.vetcare.fiscal.recipient.RecipientData;
+import com.lucast.vetcare.fiscal.recipient.RecipientService;
 import org.springframework.stereotype.Component;
 import com.lucast.vetcare.fiscal.util.FiscalUtils;
 import com.lucast.vetcare.sales.SaleEntity;
@@ -20,16 +22,19 @@ public class NfceXmlBuilder {
 
     private final FiscalProperties props;
     private final IssuerService issuerService;
+    private final RecipientService recipientService;
 
-    public NfceXmlBuilder(FiscalProperties props, IssuerService issuerService) {
+    public NfceXmlBuilder(FiscalProperties props, IssuerService issuerService, RecipientService recipientService) {
         this.props = props;
         this.issuerService = issuerService;
+        this.recipientService = recipientService;
     }
 
 
     public String buildFromSale(SaleEntity sale, String uf, String environment) {
         if (sale == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "sale is required");
         IssuerData issuer = issuerService.resolveIssuer(sale.getCompanyId());
+        RecipientData recipient = recipientService.resolveRecipient(sale.getCustomerCompanyId(), sale.getTutorId());
 
         String ufSigla = (uf == null || uf.isBlank()) ? props.getUf() : uf.trim();
         Integer cUF = FiscalUtils.ufToCodUf(ufSigla);
@@ -91,6 +96,30 @@ public class NfceXmlBuilder {
            .append(tagIfNotBlank("IE", digitsOnly(issuer.ie())))
            .append(tag("CRT", issuer.crt()))
            .append("</emit>");
+
+        if (recipient != null) {
+            xml.append("<dest>")
+               .append(tagIfNotBlank("CNPJ", digitsOnly(recipient.cnpj())))
+               .append(tagIfNotBlank("CPF", digitsOnly(recipient.cpf())))
+               .append(tag("xNome", escape(recipient.xNome())))
+               .append(tagIfNotBlank("xFant", escape(recipient.xFant())))
+               .append(recipient.endereco() == null ? "" : ("<enderDest>"
+                       + tag("xLgr", escape(recipient.endereco().xLgr()))
+                       + tag("nro", escape(recipient.endereco().nro()))
+                       + tagIfNotBlank("xCpl", escape(recipient.endereco().xCpl()))
+                       + tag("xBairro", escape(recipient.endereco().xBairro()))
+                       + tag("cMun", recipient.endereco().cMun())
+                       + tag("xMun", escape(recipient.endereco().xMun()))
+                       + tag("UF", recipient.endereco().uf())
+                       + tag("CEP", digitsOnly(recipient.endereco().cep()))
+                       + tag("cPais", "1058")
+                       + tag("xPais", "BRASIL")
+                       + "</enderDest>"))
+               .append(tag("indIEDest", recipient.indIeDest()))
+               .append(tagIfNotBlank("IE", digitsOnly(recipient.ie())))
+               .append(tagIfNotBlank("fone", digitsOnly(recipient.phone())))
+               .append("</dest>");
+        }
 
         int itemN = 1;
         BigDecimal vProdTotal = BigDecimal.ZERO;
