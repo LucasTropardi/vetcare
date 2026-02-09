@@ -4,10 +4,7 @@ public enum AssinaturaEnum {
 
     NFE("NFe","infNFe"),
     INUTILIZACAO("infInut","infInut"),
-    EVENTO("evento","infEvento"),
-    CTE("CTe","infCte"),
-    CTE_OS ("CTeOS","infCte"),
-    MDFE("MDFe", "infMDFe");
+    EVENTO("evento","infEvento");
 
     private final String tipo;
     private final String tag;

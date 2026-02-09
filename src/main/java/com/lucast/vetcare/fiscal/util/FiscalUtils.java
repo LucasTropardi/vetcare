@@ -39,44 +39,19 @@ public final class FiscalUtils {
     private static final Map<String, Map<TipoServicoEnum, WsUrls>> URLS_NFE_POR_TIPO_EMISSAO;
     private static final Map<String, Map<TipoServicoEnum, WsUrls>> URLS_NFE_POR_UF;
     private static final Set<String> UFS_SVRS;
-
-    // CTe
-    private static final Map<String, Map<TipoServicoEnum, WsUrls>> URLS_CTE_POR_TIPO_EMISSAO;
-    private static final Map<String, Map<TipoServicoEnum, WsUrls>> URLS_CTE_POR_UF;
-    private static final Set<String> UFS_CTE_SVRS;
-    private static final Set<String> UFS_CTE_SVSP;
-
     // NFCe
     private static final Map<String, Map<TipoServicoEnum, WsUrls>> URLS_NFCE_POR_UF;
     private static final Set<String> UFS_NFCE_SVRS;
-
-    // MDFe
-    private static final Map<TipoServicoEnum, WsUrls> URLS_MDFE_POR_TIPO_EMISSAO;
-
     // Bloco de inicialização estático para carregar todas as URLs
     static {
         // URLs NFe
         URLS_NFE_POR_TIPO_EMISSAO = inicializarUrlsNfePorTipoEmissao();
         URLS_NFE_POR_UF = inicializarUrlsNfePorUf();
-
-        // URLs CTe
-        URLS_CTE_POR_TIPO_EMISSAO = inicializarUrlsCtePorTipoEmissao();
-        URLS_CTE_POR_UF = inicializarUrlsCtePorUf();
-
         // URLs NFCe
         URLS_NFCE_POR_UF = inicializarUrlsNfcePorUf();
 
         UFS_SVRS = inicializarUfsSvrs();
-
-        UFS_CTE_SVRS = inicializarUfsCteSvrs();
-
-        UFS_CTE_SVSP = inicializarUfsCteSvsp();
-
         UFS_NFCE_SVRS = inicializarUfsNfceSvrs();
-
-        // URLs para MDFe
-        URLS_MDFE_POR_TIPO_EMISSAO = inicializarUrlsMdfePorTipoEmissao();
-
         logger.info("Finalizando bloco de inicialização estático para carregar todas as URLs.");
     }
 
@@ -654,84 +629,6 @@ public final class FiscalUtils {
         );
     }
 
-    private static Map<String, Map<TipoServicoEnum, WsUrls>> inicializarUrlsCtePorTipoEmissao() {
-        // CTe URLs
-        return Map.ofEntries(
-                Map.entry("7", Map.ofEntries(
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_LOTE, new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeRecepcaoSincV4/CTeRecepcaoSincV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoSincV4/CTeRecepcaoSincV4.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CONSULTA_PROTOCOLO, new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_STATUS_SERVICO, new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_EVENTO, new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_OS, new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeRecepcaoOSV4/CTeRecepcaoOSV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoOSV4/CTeRecepcaoOSV4.asmx"))
-                )),
-                Map.entry("8", Map.ofEntries(
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRecepcao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteRecepcao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RET_RECEPCAO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteRetRecepcao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteRetRecepcao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CANCELAMENTO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteCancelamento.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteCancelamento.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CONSULTA_PROTOCOLO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteConsulta.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteConsulta.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_STATUS_SERVICO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteStatusServico.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteStatusServico.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_EVENTO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteRecepcaoEvento.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteRecepcaoEvento.asmx"))
-                ))
-        );
-    }
-
-    private static Map<String, Map<TipoServicoEnum, WsUrls>> inicializarUrlsCtePorUf() {
-        // URLs CTe
-        return Map.ofEntries(
-                Map.entry(EstadoBrasil.MATO_GROSSO.getUf(), Map.ofEntries(
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_LOTE, new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoSincV4", "https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoSincV4")),
-                        Map.entry(TipoServicoEnum.CTE_CONSULTA_PROTOCOLO, new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeConsultaV4", "https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeConsultaV4")),
-                        Map.entry(TipoServicoEnum.CTE_STATUS_SERVICO, new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeStatusServicoV4", "https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeStatusServicoV4?wsdl")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_EVENTO, new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoEventoV4?wsdl", "https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoEventoV4?wsdl")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_OS, new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoEventoV4?wsdl", "https://homologacao.sefaz.mt.gov.br/ctews/services/CTeRecepcaoOSV4?wsdl"))
-                )),
-                Map.entry(EstadoBrasil.MATO_GROSSO_DO_SUL.getUf(), Map.ofEntries(
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO, new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteRecepcao.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteRecepcao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RET_RECEPCAO, new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteRetRecepcao.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteRetRecepcao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CANCELAMENTO, new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteCancelamento.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteCancelamento.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_INUTILIZACAO, new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteInutilizacao.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteInutilizacao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CONSULTA_PROTOCOLO, new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteConsulta.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteConsulta.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_STATUS_SERVICO, new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteStatusServico.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteStatusServico.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_EVENTO, new WsUrls("https://producao.cte.ms.gov.br/cteWEB/cteRecepcaoEvento.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/cteRecepcaoEvento.asmx"))
-                )),
-                Map.entry(EstadoBrasil.MINAS_GERAIS.getUf(), Map.ofEntries(
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO, new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteRecepcao", "https://hcte.fazenda.mg.gov.br/cte/services/CteRecepcao")),
-                        Map.entry(TipoServicoEnum.CTE_RET_RECEPCAO, new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteRetRecepcao", "https://hcte.fazenda.mg.gov.br/cte/services/CteRetRecepcao")),
-                        Map.entry(TipoServicoEnum.CTE_CANCELAMENTO, new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteCancelamento", "https://hcte.fazenda.mg.gov.br/cte/services/CteCancelamento")),
-                        Map.entry(TipoServicoEnum.CTE_INUTILIZACAO, new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteInutilizacao", "https://hcte.fazenda.mg.gov.br/cte/services/CteInutilizacao")),
-                        Map.entry(TipoServicoEnum.CTE_CONSULTA_PROTOCOLO, new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteConsulta", "https://hcte.fazenda.mg.gov.br/cte/services/CteConsulta")),
-                        Map.entry(TipoServicoEnum.CTE_STATUS_SERVICO, new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteStatusServico", "https://hcte.fazenda.mg.gov.br/cte/services/CteStatusServico")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_EVENTO, new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/RecepcaoEvento", "https://hcte.fazenda.mg.gov.br/cte/services/cteRecepcaoEvento"))
-                )),
-                Map.entry(EstadoBrasil.PARANA.getUf(), Map.ofEntries(
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_LOTE, new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeRecepcaoSincV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeRecepcaoSincV4")),
-                        Map.entry(TipoServicoEnum.CTE_CONSULTA_PROTOCOLO, new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeConsultaV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeConsultaV4")),
-                        Map.entry(TipoServicoEnum.CTE_STATUS_SERVICO, new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeStatusServicoV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeStatusServicoV4?wsdl")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_EVENTO, new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeRecepcaoEventoV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeRecepcaoEventoV4?wsdl")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_OS, new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeRecepcaoOSV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeRecepcaoOSV4?wsdl")),
-                        Map.entry(TipoServicoEnum.CTE_INUTILIZACAO, new WsUrls("https://cte.svrs.rs.gov.br/ws/cteinutilizacao/CteInutilizacao4.asmx", "https://homologacao.cte.svrs.rs.gov.br/ws/cteinutilizacao/CteInutilizacao4.asmx"))
-                )),
-                Map.entry(EstadoBrasil.RIO_GRANDE_DO_SUL.getUf(), Map.ofEntries(
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO, new WsUrls("https://cte.sefaz.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RET_RECEPCAO, new WsUrls("https://cte.sefaz.rs.gov.br/ws/cteretrecepcao/CteRetRecepcao.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cteretrecepcao/CteRetRecepcao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CANCELAMENTO, new WsUrls("https://cte.sefaz.rs.gov.br/ws/ctecancelamento/ctecancelamento.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/ctecancelamento/ctecancelamento.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_INUTILIZACAO, new WsUrls("https://cte.sefaz.rs.gov.br/ws/cteinutilizacao/cteinutilizacao.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cteinutilizacao/cteinutilizacao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CONSULTA_PROTOCOLO, new WsUrls("https://cte.sefaz.rs.gov.br/ws/cteconsulta/cteconsulta.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cteconsulta/cteconsulta.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_STATUS_SERVICO, new WsUrls("https://cte.sefaz.rs.gov.br/ws/ctestatusservico/ctestatusservico.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/ctestatusservico/ctestatusservico.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_EVENTO, new WsUrls("https://cte.sefaz.rs.gov.br/ws/cteRecepcaoEvento/cteRecepcaoEvento.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cteRecepcaoEvento/cteRecepcaoEvento.asmx"))
-                )),
-                Map.entry(EstadoBrasil.SAO_PAULO.getUf(), Map.ofEntries(
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_LOTE, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRecepcao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoSincV4.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RET_RECEPCAO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRetRecepcao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/cteRetRecepcao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CANCELAMENTO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteCancelamento.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/cteCancelamento.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_INUTILIZACAO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteInutilizacao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/cteInutilizacao.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_CONSULTA_PROTOCOLO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteConsulta.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeConsultaV4.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_STATUS_SERVICO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteStatusServico.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeStatusServicoV4.asmx")),
-                        Map.entry(TipoServicoEnum.CTE_RECEPCAO_EVENTO, new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRecepcaoEvento.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoEventoV4.asmx"))
-                ))
-        );
-    }
-
     private static Map<String, Map<TipoServicoEnum, WsUrls>> inicializarUrlsNfcePorUf() {
         // URLs NFCe
         return Map.ofEntries(
@@ -930,36 +827,6 @@ public final class FiscalUtils {
         );
     }
 
-    private static Set<String> inicializarUfsCteSvrs() {
-        return new HashSet<>(Arrays.asList(
-                EstadoBrasil.ACRE.getUf(),
-                EstadoBrasil.ALAGOAS.getUf(),
-                EstadoBrasil.AMAZONAS.getUf(),
-                EstadoBrasil.BAHIA.getUf(),
-                EstadoBrasil.CEARA.getUf(),
-                EstadoBrasil.DISTRITO_FEDERAL.getUf(),
-                EstadoBrasil.ESPIRITO_SANTO.getUf(),
-                EstadoBrasil.GOIAS.getUf(),
-                EstadoBrasil.MARANHAO.getUf(),
-                EstadoBrasil.PARA.getUf(),
-                EstadoBrasil.PARAIBA.getUf(),
-                EstadoBrasil.PIAUI.getUf(),
-                EstadoBrasil.RIO_DE_JANEIRO.getUf(),
-                EstadoBrasil.RIO_GRANDE_DO_NORTE.getUf(),
-                EstadoBrasil.RONDONIA.getUf(),
-                EstadoBrasil.SANTA_CATARINA.getUf(),
-                EstadoBrasil.SERGIPE.getUf(),
-                EstadoBrasil.TOCANTINS.getUf())
-        );
-    }
-
-    private static Set<String> inicializarUfsCteSvsp() {
-        return new HashSet<>(Arrays.asList(
-                EstadoBrasil.AMAPA.getUf(),
-                EstadoBrasil.PERNAMBUCO.getUf(),
-                EstadoBrasil.RORAIMA.getUf()));
-    }
-
     private static Set<String> inicializarUfsNfceSvrs() {
         return new HashSet<>(Arrays.asList(
                 EstadoBrasil.ACRE.getUf(),
@@ -980,20 +847,6 @@ public final class FiscalUtils {
                 EstadoBrasil.SANTA_CATARINA.getUf(),
                 EstadoBrasil.SERGIPE.getUf(),
                 EstadoBrasil.TOCANTINS.getUf())
-        );
-    }
-
-    private static Map<TipoServicoEnum, WsUrls> inicializarUrlsMdfePorTipoEmissao() {
-        // MDFe URLs
-        return Map.ofEntries(
-                Map.entry(TipoServicoEnum.MDFE_RECEPCAO_LOTE, new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcao/MDFeRecepcao.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcao/MDFeRecepcao.asmx")),
-                Map.entry(TipoServicoEnum.MDFE_RET_RECEPCAO, new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeRetRecepcao/MDFeRetRecepcao.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRetRecepcao/MDFeRetRecepcao.asmx")),
-                Map.entry(TipoServicoEnum.MDFE_RECEPCAO_EVENTO, new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx")),
-                Map.entry(TipoServicoEnum.MDFE_CONSULTA_MDF, new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeConsulta/MDFeConsulta.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeConsulta/MDFeConsulta.asmx")),
-                Map.entry(TipoServicoEnum.MDFE_STATUS_SERVICO_MDF, new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeStatusServico/MDFeStatusServico.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeStatusServico/MDFeStatusServico.asmx")),
-                Map.entry(TipoServicoEnum.MDFE_CONS_NAO_ENC, new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeConsNaoEnc/MDFeConsNaoEnc.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeConsNaoEnc/MDFeConsNaoEnc.asmx")),
-                Map.entry(TipoServicoEnum.MDFE_DISTRIBUICAO_DFE, new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeDistribuicaoDFe/MDFeDistribuicaoDFe.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeDistribuicaoDFe/MDFeDistribuicaoDFe.asmx")),
-                Map.entry(TipoServicoEnum.MDFE_RECEPCAO_SINC, new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx"))
         );
     }
 

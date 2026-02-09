@@ -17,17 +17,6 @@ public enum TipoServicoEnum {
     NFE_RET_AUTORIZACAO("_NFeRetAutorizacao"),
     CONSULTA_CADASTRO("_CONSULTACADASTRO"),
 
-    // CTe
-    CTE_RECEPCAO_LOTE("cteRecepcaoLote"),
-    CTE_CONSULTA_PROTOCOLO("cteConsultaProtocolo"),
-    CTE_STATUS_SERVICO("cteStatusServico"),
-    CTE_RECEPCAO_EVENTO("cteRecepcaoEvento"),
-    CTE_RECEPCAO_OS("cteRecepcaoOS"),
-    CTE_RECEPCAO("CteRecepcao"),
-    CTE_RET_RECEPCAO("CteRetRecepcao"),
-    CTE_INUTILIZACAO("CteInutilizacao"),
-    CTE_CANCELAMENTO("CteCancelamento"),
-
     // NFCe
     NFCE_RECEPCAO_EVENTO("RecepcaoEvento"),
     NFCE_INUTILIZACAO("Inutilizacao"),
@@ -38,15 +27,7 @@ public enum TipoServicoEnum {
     NFCE_QR_CODE("QRCode"),
     NFCE_CONSULTA_NFCE("ConsultaNFCe"),
 
-    // MDFe
-    MDFE_RECEPCAO_LOTE("mdfeRecepcaoLote"),
-    MDFE_RET_RECEPCAO("mdfeRetRecepcao"),
-    MDFE_RECEPCAO_EVENTO("mdfeRecepcaoEvento"),
-    MDFE_CONSULTA_MDF("mdfeConsultaMDF"),
-    MDFE_STATUS_SERVICO_MDF("mdfeStatusServicoMDF"),
-    MDFE_CONS_NAO_ENC("mdfeConsNaoEnc"),
-    MDFE_DISTRIBUICAO_DFE("MDFeDistribuicaoDFe"),
-    MDFE_RECEPCAO_SINC("MDFeRecepcaoSinc");
+    ;
 
     private final String codigo;
 

@@ -73,31 +73,10 @@ public class FiscalUtil {
     private static final Map<String, Map<String, WsUrls>> URLS_NFE_POR_UF;
     private static final Set<String> UFS_SVRS;
 
-    // CTe
-    private static final Map<String, Map<String, WsUrls>> URLS_CTE_POR_TIPO_EMISSAO;
-    private static final Map<String, Map<String, WsUrls>> URLS_CTE_POR_UF;
-    private static final Set<String> UFS_CTE_SVRS;
-    private static final Set<String> UFS_CTE_SVSP;
-
     // NFCe
     private static final Map<String, Map<String, WsUrls>> URLS_NFCE_POR_UF;
     private static final Set<String> UFS_NFCE_SVRS;
 
-    private static final Map<String, WsUrls> URLS_MDFE_POR_TIPO_EMISSAO;
-    
-    // URLs para MDFe
-    static {
-        URLS_MDFE_POR_TIPO_EMISSAO = new HashMap<>();
-        URLS_MDFE_POR_TIPO_EMISSAO.put("mdfeRecepcaoLote", new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcao/MDFeRecepcao.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcao/MDFeRecepcao.asmx"));
-        URLS_MDFE_POR_TIPO_EMISSAO.put("mdfeRetRecepcao", new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeRetRecepcao/MDFeRetRecepcao.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRetRecepcao/MDFeRetRecepcao.asmx"));
-        URLS_MDFE_POR_TIPO_EMISSAO.put("mdfeRecepcaoEvento", new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx"));
-        URLS_MDFE_POR_TIPO_EMISSAO.put("mdfeConsultaMDF", new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeConsulta/MDFeConsulta.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeConsulta/MDFeConsulta.asmx"));
-        URLS_MDFE_POR_TIPO_EMISSAO.put("mdfeStatusServicoMDF", new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeStatusServico/MDFeStatusServico.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeStatusServico/MDFeStatusServico.asmx"));
-        URLS_MDFE_POR_TIPO_EMISSAO.put("mdfeConsNaoEnc", new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeConsNaoEnc/MDFeConsNaoEnc.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeConsNaoEnc/MDFeConsNaoEnc.asmx"));
-        URLS_MDFE_POR_TIPO_EMISSAO.put("MDFeDistribuicaoDFe", new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeDistribuicaoDFe/MDFeDistribuicaoDFe.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeDistribuicaoDFe/MDFeDistribuicaoDFe.asmx"));
-        URLS_MDFE_POR_TIPO_EMISSAO.put("MDFeRecepcaoSinc", new WsUrls("https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx", "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx"));
-    }
-    
     // URLs NFe
     static {
         URLS_NFE_POR_TIPO_EMISSAO = new HashMap<>();
@@ -321,89 +300,7 @@ public class FiscalUtil {
         svrsUrls.put("_RECPEVENTO", new WsUrls("https://nfe.svrs.rs.gov.br/ws/recepcaoevento/recepcaoevento4.asmx", "https://nfe-homologacao.svrs.rs.gov.br/ws/recepcaoevento/recepcaoevento4.asmx"));
         URLS_NFE_POR_UF.put("SVRS", svrsUrls);
     }
-    
-    // URLs CTe
-    static {
-        URLS_CTE_POR_TIPO_EMISSAO = new HashMap<>();
-        URLS_CTE_POR_UF = new HashMap<>();
 
-        // CTe URLs
-        Map<String, WsUrls> cteSvrsUrls = new HashMap<>();
-        cteSvrsUrls.put("cteRecepcaoLote", new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeRecepcaoSincV4/CTeRecepcaoSincV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoSincV4/CTeRecepcaoSincV4.asmx"));
-        cteSvrsUrls.put("cteConsultaProtocolo", new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx"));
-        cteSvrsUrls.put("cteStatusServico", new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx"));
-        cteSvrsUrls.put("cteRecepcaoEvento", new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx"));
-        cteSvrsUrls.put("cteRecepcaoOS", new WsUrls("https://cte.svrs.rs.gov.br/ws/CTeRecepcaoOSV4/CTeRecepcaoOSV4.asmx", "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoOSV4/CTeRecepcaoOSV4.asmx\n"));
-        URLS_CTE_POR_TIPO_EMISSAO.put("7", cteSvrsUrls);
-
-        Map<String, WsUrls> cteSvspUrls = new HashMap<>();
-        cteSvspUrls.put("CteRecepcao", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRecepcao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteRecepcao.asmx"));
-        cteSvspUrls.put("CteRetRecepcao", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteRetRecepcao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteRetRecepcao.asmx"));
-        cteSvspUrls.put("CteCancelamento", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteCancelamento.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteCancelamento.asmx"));
-        cteSvspUrls.put("CteConsultaProtocolo", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteConsulta.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteConsulta.asmx"));
-        cteSvspUrls.put("CteStatusServico", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteStatusServico.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteStatusServico.asmx"));
-        cteSvspUrls.put("cteRecepcaoEvento", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/CteRecepcaoEvento.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteRecepcaoEvento.asmx"));
-        URLS_CTE_POR_TIPO_EMISSAO.put("8", cteSvspUrls);
-
-        Map<String, WsUrls> cteMtUrls = new HashMap<>();
-        cteMtUrls.put("cteRecepcaoLote", new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoSincV4", "https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoSincV4"));
-        cteMtUrls.put("cteConsultaProtocolo", new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeConsultaV4", "https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeConsultaV4"));
-        cteMtUrls.put("cteStatusServico", new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeStatusServicoV4", "https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeStatusServicoV4?wsdl"));
-        cteMtUrls.put("cteRecepcaoEvento", new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoEventoV4?wsdl", "https://homologacao.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoEventoV4?wsdl"));
-        cteMtUrls.put("cteRecepcaoOS", new WsUrls("https://cte.sefaz.mt.gov.br/ctews2/services/CTeRecepcaoEventoV4?wsdl", "https://homologacao.sefaz.mt.gov.br/ctews/services/CTeRecepcaoOSV4?wsdl"));
-        URLS_CTE_POR_UF.put(EstadoBrasil.MATO_GROSSO.getUf(), cteMtUrls);
-
-        Map<String, WsUrls> cteMsUrls = new HashMap<>();
-        cteMsUrls.put("CteRecepcao", new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteRecepcao.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteRecepcao.asmx"));
-        cteMsUrls.put("CteRetRecepcao", new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteRetRecepcao.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteRetRecepcao.asmx"));
-        cteMsUrls.put("CteCancelamento", new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteCancelamento.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteCancelamento.asmx"));
-        cteMsUrls.put("CteInutilizacao", new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteInutilizacao.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteInutilizacao.asmx"));
-        cteMsUrls.put("CteConsultaProtocolo", new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteConsulta.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteConsulta.asmx"));
-        cteMsUrls.put("CteStatusServico", new WsUrls("https://producao.cte.ms.gov.br/cteWEB/CteStatusServico.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/CteStatusServico.asmx"));
-        cteMsUrls.put("cteRecepcaoEvento", new WsUrls("https://producao.cte.ms.gov.br/cteWEB/cteRecepcaoEvento.asmx", "https://homologacao.cte.ms.gov.br/cteWEB/cteRecepcaoEvento.asmx"));
-        URLS_CTE_POR_UF.put(EstadoBrasil.MATO_GROSSO_DO_SUL.getUf(), cteMsUrls);
-
-        Map<String, WsUrls> cteMgUrls = new HashMap<>();
-        cteMgUrls.put("CteRecepcao", new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteRecepcao", "https://hcte.fazenda.mg.gov.br/cte/services/CteRecepcao"));
-        cteMgUrls.put("CteRetRecepcao", new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteRetRecepcao", "https://hcte.fazenda.mg.gov.br/cte/services/CteRetRecepcao"));
-        cteMgUrls.put("CteCancelamento", new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteCancelamento", "https://hcte.fazenda.mg.gov.br/cte/services/CteCancelamento"));
-        cteMgUrls.put("CteInutilizacao", new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteInutilizacao", "https://hcte.fazenda.mg.gov.br/cte/services/CteInutilizacao"));
-        cteMgUrls.put("CteConsultaProtocolo", new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteConsulta", "https://hcte.fazenda.mg.gov.br/cte/services/CteConsulta"));
-        cteMgUrls.put("CteStatusServico", new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/CteStatusServico", "https://hcte.fazenda.mg.gov.br/cte/services/CteStatusServico"));
-        cteMgUrls.put("cteRecepcaoEvento", new WsUrls("https://cte.fazenda.mg.gov.br/cte/services/RecepcaoEvento", "https://hcte.fazenda.mg.gov.br/cte/services/cteRecepcaoEvento"));
-        URLS_CTE_POR_UF.put(EstadoBrasil.MINAS_GERAIS.getUf(), cteMgUrls);
-
-        Map<String, WsUrls> ctePrUrls = new HashMap<>();
-        ctePrUrls.put("cteRecepcaoLote", new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeRecepcaoSincV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeRecepcaoSincV4"));
-        ctePrUrls.put("cteConsultaProtocolo", new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeConsultaV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeConsultaV4"));
-        ctePrUrls.put("cteStatusServico", new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeStatusServicoV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeStatusServicoV4?wsdl"));
-        ctePrUrls.put("cteRecepcaoEvento", new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeRecepcaoEventoV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeRecepcaoEventoV4?wsdl"));
-        ctePrUrls.put("cteRecepcaoOS", new WsUrls("https://cte.fazenda.pr.gov.br/cte4/CTeRecepcaoOSV4?wsdl", "https://homologacao.cte.fazenda.pr.gov.br/cte4/CTeRecepcaoOSV4?wsdl"));
-        ctePrUrls.put("CteInutilizacao", new WsUrls("https://cte.svrs.rs.gov.br/ws/cteinutilizacao/CteInutilizacao4.asmx", "https://homologacao.cte.svrs.rs.gov.br/ws/cteinutilizacao/CteInutilizacao4.asmx"));
-        URLS_CTE_POR_UF.put(EstadoBrasil.PARANA.getUf(), ctePrUrls);
-
-        Map<String, WsUrls> cteRsUrls = new HashMap<>();
-        cteRsUrls.put("CteRecepcao", new WsUrls("https://cte.sefaz.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx"));
-        cteRsUrls.put("CteRetRecepcao", new WsUrls("https://cte.sefaz.rs.gov.br/ws/cteretrecepcao/CteRetRecepcao.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cteretrecepcao/CteRetRecepcao.asmx"));
-        cteRsUrls.put("CteCancelamento", new WsUrls("https://cte.sefaz.rs.gov.br/ws/ctecancelamento/ctecancelamento.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/ctecancelamento/ctecancelamento.asmx"));
-        cteRsUrls.put("CteInutilizacao", new WsUrls("https://cte.sefaz.rs.gov.br/ws/cteinutilizacao/cteinutilizacao.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cteinutilizacao/cteinutilizacao.asmx"));
-        cteRsUrls.put("CteConsultaProtocolo", new WsUrls("https://cte.sefaz.rs.gov.br/ws/cteconsulta/cteconsulta.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cteconsulta/cteconsulta.asmx"));
-        cteRsUrls.put("CteStatusServico", new WsUrls("https://cte.sefaz.rs.gov.br/ws/ctestatusservico/ctestatusservico.asm", "https://homologacao.cte.sefaz.rs.gov.br/ws/ctestatusservico/ctestatusservico.asmx"));
-        cteRsUrls.put("cteRecepcaoEvento", new WsUrls("https://cte.sefaz.rs.gov.br/ws/cteRecepcaoEvento/cteRecepcaoEvento.asmx", "https://homologacao.cte.sefaz.rs.gov.br/ws/cteRecepcaoEvento/cteRecepcaoEvento.asmx"));
-        URLS_CTE_POR_UF.put(EstadoBrasil.RIO_GRANDE_DO_SUL.getUf(), cteRsUrls);
-
-        Map<String, WsUrls> cteSpUrls = new HashMap<>();
-        cteSpUrls.put("cteRecepcaoLote", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRecepcao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoSincV4.asmx"));
-        cteSpUrls.put("cteRetRecepcao", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRetRecepcao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/cteRetRecepcao.asmx"));
-        cteSpUrls.put("CteCancelamento", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteCancelamento.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/cteCancelamento.asmx"));
-        cteSpUrls.put("CteInutilizacao", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteInutilizacao.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/cteInutilizacao.asmx"));
-        cteSpUrls.put("cteConsultaProtocolo", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteConsulta.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeConsultaV4.asmx"));
-        cteSpUrls.put("cteStatusServico", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteStatusServico.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeStatusServicoV4.asmx"));
-        cteSpUrls.put("cteRecepcaoEvento", new WsUrls("https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRecepcaoEvento.asmx", "https://homologacao.nfe.fazenda.sp.gov.br/CTeWS/WS/CTeRecepcaoEventoV4.asmx"));
-        URLS_CTE_POR_UF.put(EstadoBrasil.SAO_PAULO.getUf(), cteSpUrls);
-    }
-
-    // URLs NFCe
     static {
         URLS_NFCE_POR_UF = new HashMap<>();
         
@@ -425,33 +322,6 @@ public class FiscalUtil {
                 EstadoBrasil.TOCANTINS.getCodigo().toString(),
                 EstadoBrasil.ESPIRITO_SANTO.getCodigo().toString(),
                 EstadoBrasil.CEARA.getCodigo().toString())
-        );
-
-        UFS_CTE_SVRS = new HashSet<>(Arrays.asList(
-                EstadoBrasil.ACRE.getUf(),
-                EstadoBrasil.ALAGOAS.getUf(),
-                EstadoBrasil.AMAZONAS.getUf(),
-                EstadoBrasil.BAHIA.getUf(),
-                EstadoBrasil.CEARA.getUf(),
-                EstadoBrasil.DISTRITO_FEDERAL.getUf(),
-                EstadoBrasil.ESPIRITO_SANTO.getUf(),
-                EstadoBrasil.GOIAS.getUf(),
-                EstadoBrasil.MARANHAO.getUf(),
-                EstadoBrasil.PARA.getUf(),
-                EstadoBrasil.PARAIBA.getUf(),
-                EstadoBrasil.PIAUI.getUf(),
-                EstadoBrasil.RIO_DE_JANEIRO.getUf(),
-                EstadoBrasil.RIO_GRANDE_DO_NORTE.getUf(),
-                EstadoBrasil.RONDONIA.getUf(),
-                EstadoBrasil.SANTA_CATARINA.getUf(),
-                EstadoBrasil.SERGIPE.getUf(),
-                EstadoBrasil.TOCANTINS.getUf())
-        );
-        
-        UFS_CTE_SVSP = new HashSet<>(Arrays.asList(
-                EstadoBrasil.AMAPA.getUf(),
-                EstadoBrasil.PERNAMBUCO.getUf(),
-                EstadoBrasil.RORAIMA.getUf())
         );
 
         UFS_NFCE_SVRS = new HashSet<>(Arrays.asList(
@@ -848,10 +718,6 @@ public class FiscalUtil {
 		return sb.toString();
 	}
 
-    public String removeXMLNamespaceAndVersionCTe(String xml) {
-        return xml.replaceFirst("xmlns=\"http://www.portalfiscal.inf.br/cte\" versao=\"4.00\">", "");
-    }
-
     public String pegaTag(String xml, String tag) {
         String retonro = "";
         String tagInicio = "<" + tag;
@@ -921,83 +787,6 @@ public class FiscalUtil {
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         StringReader reader = new StringReader(conteudoXml);
         return (T) unmarshaller.unmarshal(reader);
-    }
-
-    public String objectToXmlCTe(Object objeto) throws JAXBException {
-        return objectToXmlCTe(objeto, null, null);
-    }
-
-    private <T> String objectToXmlCTe(T objeto, Class<T> clazz, String nomeElemento) throws JAXBException {
-
-        JAXBContext context = JAXBContext.newInstance(objeto.getClass());
-        Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty("jaxb.encoding", "UTF-8");
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.FALSE);
-        marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
-        StringWriter sw = new StringWriter();
-        Result result = new StreamResult(sw);
-
-        if (nomeElemento != null) {
-            marshaller.marshal(new JAXBElement<>(
-                    new QName("http://www.portalfiscal.inf.br/cte", nomeElemento),
-                    clazz, objeto), result);
-        } else {
-            marshaller.marshal(objeto, result);
-        }
-
-        return replacesCte("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + sw);
-    }
-
-    private static String replacesCte(String xml) {
-        return xml.replace("ns2:", "")
-                .replace("ns3:", "")
-                .replace("&lt;", "<")
-                .replace("&gt;", ">")
-                .replace("<Signature>", "<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">")
-                .replace(" xmlns:ns2=\"http://www.w3.org/2000/09/xmldsig#\"", "")
-                .replace(" xmlns:ns3=\"http://www.portalfiscal.inf.br/cte\"", "")
-                .replace(" xmlns:ns2=\"http://www.portalfiscal.inf.br/cte\"", "")
-                .replace(" xmlns=\"\"", "");
-    }
-
-    public String objectToXmlMDFe(Object objeto) throws JAXBException {
-        return objectToXmlMDFe(objeto, null, null);
-    }
-
-    private <T> String objectToXmlMDFe(T objeto, Class<T> clazz, String nomeElemento) throws JAXBException {
-
-        JAXBContext context = JAXBContext.newInstance(objeto.getClass());
-        Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty("jaxb.encoding", "UTF-8");
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.FALSE);
-        marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
-        StringWriter sw = new StringWriter();
-        Result result = new StreamResult(sw);
-
-        if (nomeElemento != null) {
-            marshaller.marshal(new JAXBElement<>(
-                    new QName("http://www.portalfiscal.inf.br/mdfe", nomeElemento),
-                    clazz, objeto), result);
-        } else {
-            marshaller.marshal(objeto, result);
-        }
-
-        return replacesMDFe("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + sw);
-    }
-
-    private static String replacesMDFe(String xml) {
-        return xml.replace("ns2:", "")
-                .replace("ns3:", "")
-                .replace("&lt;", "<")
-                .replace("&gt;", ">")
-                .replace("<Signature>", "<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">")
-                .replace(" xmlns:ns2=\"http://www.w3.org/2000/09/xmldsig#\"", "")
-                .replace(" xmlns:ns3=\"http://www.portalfiscal.inf.br/mdfe\"", "")
-                .replace(" xmlns:ns2=\"http://www.portalfiscal.inf.br/mdfe\"", "")
-                .replace("xmlns:ns4=\"http://www.portalfiscal.inf.br/mdfe\"", "")
-                .replace("xmlns:ns3=\"http://www.w3.org/2000/09/xmldsig#\"", "")
-                .replace("xmlns:ns2=\"http://www.portalfiscal.inf.br/cte\"", "")
-                .replace(" xmlns=\"\"", "");
     }
 
     public String objectToXml(Object object) {
@@ -1121,119 +910,11 @@ public class FiscalUtil {
 
         return writer.toString();
     }
-
-    public String addNamespaceToXMLCTe(String xmlContent) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse(new ByteArrayInputStream(xmlContent.getBytes(StandardCharsets.UTF_8)));
-
-        Element root = doc.getDocumentElement();
-        root.setAttribute("xmlns", "http://www.portalfiscal.inf.br/cte");
-
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        DOMSource source = new DOMSource(doc);
-        StringWriter writer = new StringWriter();
-        transformer.transform(source, new StreamResult(writer));
-
-        return writer.toString();
-    }
-
-    public String addNamespaceToXMLMDFe(String xmlContent) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse(new ByteArrayInputStream(xmlContent.getBytes(StandardCharsets.UTF_8)));
-
-        Element root = doc.getDocumentElement();
-        root.setAttribute("xmlns", "http://www.portalfiscal.inf.br/mdfe");
-
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        DOMSource source = new DOMSource(doc);
-        StringWriter writer = new StringWriter();
-        transformer.transform(source, new StreamResult(writer));
-
-        return writer.toString();
-    }
-
-    public String xmlSoapCte(String xml, String servico) {
-        return "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                "<soap12:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\">" +
-                "<soap12:Body>" +
-                "<cteDadosMsg xmlns=\"http://www.portalfiscal.inf.br/cte/wsdl/" + servico + "\">" +
-                xml +
-                "</cteDadosMsg>" +
-                "</soap12:Body>" +
-                "</soap12:Envelope>";
-    }
-
-    public String xmlSoapMdfe(String xml, String soapAction, String uf) {
-        return "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
-                "<soap12:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://www.w3.org/2003/05/soap-envelope\">" +
-                "<soap12:Header>" +
-                "<mdfeCabecMsg  xmlns=\"http://www.portalfiscal.inf.br/mdfe/wsdl/" + soapAction + "\">" +
-                "<cUF>" + ufToCodUf(uf) + "</cUF>" +
-                "<versaoDados>3.00</versaoDados>" +
-                "</mdfeCabecMsg>" +
-                "</soap12:Header>" +
-                "<soap12:Body>" +
-                "<mdfeDadosMsg xmlns=\"http://www.portalfiscal.inf.br/mdfe/wsdl/" + soapAction + "\">" +
-                xml +
-                "</mdfeDadosMsg>" +
-                "</soap12:Body>" +
-                "</soap12:Envelope>";
-    }
-
-    public String getUrlCTe(String tipoServico, String uf, Integer tipoAmbienteInt, String tipoEmissao) {
-        String tipoAmbiente = String.valueOf(tipoAmbienteInt);
-        Map<String, WsUrls> urlsPorServico;
-
-        if (tipoEmissao != null && !tipoEmissao.isEmpty()) {
-            urlsPorServico = URLS_CTE_POR_TIPO_EMISSAO.get(tipoEmissao);
-            if (urlsPorServico != null) {
-                WsUrls urls = urlsPorServico.get(tipoServico);
-                if (urls != null) {
-                    return urls.get(tipoAmbiente);
-                }
-            }
-        }
-
-        urlsPorServico = URLS_CTE_POR_UF.get(uf);
-        if (urlsPorServico != null) {
-            WsUrls urls = urlsPorServico.get(tipoServico);
-            if (urls != null) {
-                return urls.get(tipoAmbiente);
-            }
-        }
-
-        if (UFS_CTE_SVRS.contains(uf)) {
-            urlsPorServico = URLS_CTE_POR_TIPO_EMISSAO.get("7"); // SVRS
-            if (urlsPorServico != null) {
-                WsUrls urls = urlsPorServico.get(tipoServico);
-                if (urls != null) {
-                    return urls.get(tipoAmbiente);
-                }
-            }
-        }
-
-        if (UFS_CTE_SVSP.contains(uf)) {
-            urlsPorServico = URLS_CTE_POR_TIPO_EMISSAO.get("8"); // SVSP
-            if (urlsPorServico != null) {
-                WsUrls urls = urlsPorServico.get(tipoServico);
-                if (urls != null) {
-                    return urls.get(tipoAmbiente);
-                }
-            }
-        }
-
-        return "";
-    }
-
     public String getUrlNFCe(String tipoServico, String uf, Integer ambiente) {
         String tipoAmbiente = String.valueOf(ambiente);
-        Map<String, WsUrls> urlsPorServico = URLS_NFCE_POR_UF.get(uf);
+        Map<String, FiscalUtil.WsUrls> urlsPorServico = URLS_NFCE_POR_UF.get(uf);
         if (urlsPorServico != null) {
-            WsUrls urls = urlsPorServico.get(tipoServico);
+            FiscalUtil.WsUrls urls = urlsPorServico.get(tipoServico);
             if (urls != null) {
                 return urls.get(tipoAmbiente);
             }
@@ -1242,7 +923,7 @@ public class FiscalUtil {
         if (UFS_NFCE_SVRS.contains(uf)) {
             urlsPorServico = URLS_NFCE_POR_UF.get("SVRS");
             if (urlsPorServico != null) {
-                WsUrls urls = urlsPorServico.get(tipoServico);
+                FiscalUtil.WsUrls urls = urlsPorServico.get(tipoServico);
                 if (urls != null) {
                     return urls.get(tipoAmbiente);
                 }
@@ -1270,17 +951,6 @@ public class FiscalUtil {
             throw new UncheckedIOException("Erro ao compactar GZIp", e);
         }
     }
-
-    public String getUrlMDFe(String service, Integer tipoAmbiente) {
-        WsUrls wsUrls = URLS_MDFE_POR_TIPO_EMISSAO.get(service);
-        
-        if (wsUrls == null) {
-            wsUrls = URLS_MDFE_POR_TIPO_EMISSAO.get("MDFeRecepcaoSinc");
-        }
-        
-        return wsUrls.get(tipoAmbiente.toString());
-    }
-
     public String formatDate(LocalDateTime data) {
         int year = data.getYear() % 100;
         int month = data.getMonthValue();
