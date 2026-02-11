@@ -19,6 +19,8 @@ public interface CustomerCompanyRepository extends JpaRepository<CustomerCompany
 
     List<CustomerCompanyEntity> findByActiveTrueAndTutorIdOrderByLegalNameAsc(Long tutorId);
 
+    Page<CustomerCompanyEntity> findByActiveTrueAndTutorIdOrderByLegalNameAsc(Long tutorId, Pageable pageable);
+
     @Query("""
             select c from CustomerCompanyEntity c
             where c.active = true

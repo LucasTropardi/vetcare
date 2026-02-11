@@ -120,6 +120,12 @@ public class CustomerCompanyService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public Page<CustomerCompanyListItemResponse> listByTutorPaged(Long tutorId, Pageable pageable) {
+        return companyRepository.findByActiveTrueAndTutorIdOrderByLegalNameAsc(tutorId, pageable)
+                .map(this::toListItem);
+    }
+
     @Transactional
     public CustomerCompanyResponse update(Long id, UpdateCustomerCompanyRequest req) {
         var now = OffsetDateTime.now();
