@@ -4,14 +4,13 @@ import com.lucast.vetcare.fiscal.enums.AssinaturaEnum;
 import com.lucast.vetcare.fiscal.enums.ServicosNFeEnum;
 import com.lucast.vetcare.fiscal.enums.TipoServicoEnum;
 import com.lucast.vetcare.fiscal.exception.FiscalException;
+import com.lucast.vetcare.fiscal.application.port.out.SefazGateway;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.eventos.requests.RequestCancelarNFe;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.requests.RequestValidaNFe;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.services.AssinarNFeService;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.services.ValidaNFeService;
-import com.lucast.vetcare.fiscal.util.FiscalUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneOffset;
@@ -20,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@Scope("prototype")
 public class CancelarNFeService {
 
     private static final Logger logger = LoggerFactory.getLogger(CancelarNFeService.class);
@@ -28,14 +26,28 @@ public class CancelarNFeService {
     public static final String STR_X_MOTIVO = "xMotivo";
     public static final String STR_C_STAT = "cStat";
 
-    public String cancelaNFe(RequestCancelarNFe request, ValidaNFeService validaNFeService, AssinarNFeService assinarNFeService) throws FiscalException {
+    private final ValidaNFeService validaNFeService;
+    private final AssinarNFeService assinarNFeService;
+    private final SefazGateway sefazGateway;
+
+    public CancelarNFeService(
+            ValidaNFeService validaNFeService,
+            AssinarNFeService assinarNFeService,
+            SefazGateway sefazGateway
+    ) {
+        this.validaNFeService = validaNFeService;
+        this.assinarNFeService = assinarNFeService;
+        this.sefazGateway = sefazGateway;
+    }
+
+    public String cancelaNFe(RequestCancelarNFe request) throws FiscalException {
 
         long startTime = System.currentTimeMillis();
         logger.info("Início do Cancelamento NFe. Chave: {}, CNPJ: {}", request.getChaveNFe(), request.getCnpj());
 
         try {
-            String url = FiscalUtils.getUrlNFe(TipoServicoEnum.EVENTO, request.getCodigoUF(), request.getTipoAmbiente().getCodigo(), request.getTipoEmissao());
-            String xmlEvento = criaXmlEvento(request, assinarNFeService);
+            String url = sefazGateway.getUrlNFe(TipoServicoEnum.EVENTO, request.getCodigoUF(), request.getTipoAmbiente().getCodigo(), request.getTipoEmissao());
+            String xmlEvento = criaXmlEvento(request);
 
             boolean validada = validaNFeService.validaXml(montaRequestValidaNFe(xmlEvento, ServicosNFeEnum.CANCELAMENTO));
             if (!validada) {
@@ -44,33 +56,33 @@ public class CancelarNFeService {
             }
 
             String xmlConsulta = montaXmlConsulta(xmlEvento);
-            String retornoConsulta = FiscalUtils.consulta(url, xmlConsulta, request.getCertificado(), "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento");
+            String retornoConsulta = sefazGateway.consulta(url, xmlConsulta, request.getCertificado(), "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento");
 
-            String retEnvEvento = FiscalUtils.pegaTag(retornoConsulta, "retEnvEvento");
-            String infEvento = FiscalUtils.pegaTag(retornoConsulta, "infEvento");
+            String retEnvEvento = sefazGateway.pegaTag(retornoConsulta, "retEnvEvento");
+            String infEvento = sefazGateway.pegaTag(retornoConsulta, "infEvento");
 
             List<String> retorno = montaRetorno(infEvento);
 
-            if (!"128".equals(FiscalUtils.pegaTag(retEnvEvento, STR_C_STAT))) {
-                String cStat = FiscalUtils.pegaTag(retEnvEvento, STR_C_STAT);
+            if (!"128".equals(sefazGateway.pegaTag(retEnvEvento, STR_C_STAT))) {
+                String cStat = sefazGateway.pegaTag(retEnvEvento, STR_C_STAT);
 
-                String xMotivo = FiscalUtils.pegaTag(retEnvEvento, STR_X_MOTIVO);
+                String xMotivo = sefazGateway.pegaTag(retEnvEvento, STR_X_MOTIVO);
                 logger.error("Erro no envio do Cancelamento. Retorno: {} Motivo: {}", cStat, xMotivo);
                 throw new FiscalException("Aviso", "Retorno do Evento -> cStat: " + cStat
                         + " | Motivo: " + xMotivo
-                        + " | Informações do Evento -> cStat: " + FiscalUtils.pegaTag(infEvento, STR_C_STAT)
-                        + " | Motivo: " + FiscalUtils.pegaTag(infEvento, STR_X_MOTIVO));
+                        + " | Informações do Evento -> cStat: " + sefazGateway.pegaTag(infEvento, STR_C_STAT)
+                        + " | Motivo: " + sefazGateway.pegaTag(infEvento, STR_X_MOTIVO));
             } else if (!"135".equals(retorno.get(3))) {
-                String cStat = FiscalUtils.pegaTag(infEvento, STR_C_STAT);
-                String xMotivo = FiscalUtils.pegaTag(infEvento, STR_X_MOTIVO);
+                String cStat = sefazGateway.pegaTag(infEvento, STR_C_STAT);
+                String xMotivo = sefazGateway.pegaTag(infEvento, STR_X_MOTIVO);
 
                 logger.error("Erro no processamento do evento Cancelamento. InfEvento: cStat={}, xMotivo={}", cStat, xMotivo);
                 throw new FiscalException("Erro", "Informações do Evento -> cStat: " + cStat
-                        + " | Motivo: " + FiscalUtils.pegaTag(infEvento, STR_X_MOTIVO));
+                        + " | Motivo: " + sefazGateway.pegaTag(infEvento, STR_X_MOTIVO));
             }
 
             logger.info("Cancelamento NFe processado com sucesso. Chave: {}", request.getChaveNFe());
-            return montaXmlFinal(FiscalUtils.pegaTag2(xmlEvento, "evento"), FiscalUtils.pegaTag2(retornoConsulta, "retEvento"));
+            return montaXmlFinal(sefazGateway.pegaTag2(xmlEvento, "evento"), sefazGateway.pegaTag2(retornoConsulta, "retEvento"));
 
         } catch (Exception e) {
             throw new FiscalException("Erro", "Erro inesperado no Cancelamento: " + e.getMessage());
@@ -111,7 +123,7 @@ public class CancelarNFeService {
                 "</soap12:Envelope>";
     }
 
-    private String criaXmlEvento(RequestCancelarNFe request, AssinarNFeService assinarNFeService) throws FiscalException {
+    private String criaXmlEvento(RequestCancelarNFe request) throws FiscalException {
         try {
             String dhEvento = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX").format(request.getDataEvento().atOffset(ZoneOffset.ofHours(-3)));
 
@@ -150,16 +162,16 @@ public class CancelarNFeService {
     private List<String> montaRetorno(String respostaConsulta) {
         List<String> retorno = new ArrayList<>();
 
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "tpAmb"));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "verAplic"));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "cOrgao"));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, STR_C_STAT));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, STR_X_MOTIVO));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "chNFe"));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "tpEvento"));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "xEvento"));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "nSeqEvento"));
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "dhRegEvento"));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "tpAmb"));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "verAplic"));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "cOrgao"));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, STR_C_STAT));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, STR_X_MOTIVO));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "chNFe"));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "tpEvento"));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "xEvento"));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "nSeqEvento"));
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "dhRegEvento"));
 
         logger.info("Retorno Cancelamento montado: {}", retorno);
 

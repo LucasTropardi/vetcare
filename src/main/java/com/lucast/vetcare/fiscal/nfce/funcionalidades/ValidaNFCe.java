@@ -2,6 +2,7 @@ package com.lucast.vetcare.fiscal.nfce.funcionalidades;
 
 import com.lucast.vetcare.fiscal.enums.ServicosNFeEnum;
 import com.lucast.vetcare.fiscal.exception.FiscalException;
+import org.springframework.stereotype.Service;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
@@ -13,9 +14,10 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Optional;
 
+@Service
 public class ValidaNFCe implements ErrorHandler {
 
-    private String listaComErrosDeValidacao = "";
+    private final ThreadLocal<StringBuilder> listaComErrosDeValidacao = ThreadLocal.withInitial(StringBuilder::new);
 
     public Boolean validaXml(String xmlAssinado, ServicosNFeEnum servico) throws FiscalException {
         return validaXml("schemas-nfe/" + servico.getXsd(), xmlAssinado);
@@ -34,6 +36,8 @@ public class ValidaNFCe implements ErrorHandler {
     }
 
     private String validateXml(String xml, String xsd) throws FiscalException {
+        listaComErrosDeValidacao.set(new StringBuilder());
+
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         documentBuilderFactory.setValidating(true);
         documentBuilderFactory.setNamespaceAware(true);
@@ -61,18 +65,18 @@ public class ValidaNFCe implements ErrorHandler {
     @Override
     public void error(SAXParseException exception) {
         if (isError(exception)) {
-            listaComErrosDeValidacao += tratamentoRetorno(exception.getMessage());
+            listaComErrosDeValidacao.get().append(tratamentoRetorno(exception.getMessage()));
         }
     }
 
     @Override
     public void fatalError(SAXParseException exception) {
-        listaComErrosDeValidacao += tratamentoRetorno(exception.getMessage());
+        listaComErrosDeValidacao.get().append(tratamentoRetorno(exception.getMessage()));
     }
 
     @Override
     public void warning(SAXParseException exception) {
-        listaComErrosDeValidacao += tratamentoRetorno(exception.getMessage());
+        listaComErrosDeValidacao.get().append(tratamentoRetorno(exception.getMessage()));
     }
 
     private String tratamentoRetorno(String message) {
@@ -113,7 +117,9 @@ public class ValidaNFCe implements ErrorHandler {
     }
 
     private String getListaComErrosDeValidacao() {
-        return listaComErrosDeValidacao;
+        String erros = listaComErrosDeValidacao.get().toString();
+        listaComErrosDeValidacao.remove();
+        return erros;
     }
 
     private boolean isError(SAXParseException exception) {

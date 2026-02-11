@@ -1,46 +1,60 @@
 package com.lucast.vetcare.fiscal.nfce.funcionalidades;
 
 import com.lucast.vetcare.fiscal.certificado.Certificado;
+import com.lucast.vetcare.fiscal.application.port.out.SefazGateway;
 import com.lucast.vetcare.fiscal.enums.AssinaturaEnum;
 import com.lucast.vetcare.fiscal.enums.ServicosNFeEnum;
 import com.lucast.vetcare.fiscal.enums.TipoAmbienteEnum;
+import com.lucast.vetcare.fiscal.enums.TipoServicoEnum;
 import com.lucast.vetcare.fiscal.exception.FiscalException;
-import com.lucast.vetcare.fiscal.util.FiscalUtil;
+import com.lucast.vetcare.fiscal.nfce.result.NfceCancellationResult;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
+@Service
 public class CancelarNFCe {
 
-    private FiscalUtil fiscalUtil = new FiscalUtil();
+    private final SefazGateway sefazGateway;
+    private final ValidaNFCe validaNFCe;
+    private final AssinarNFCe assinarNFCe;
 
-    private ArrayList<String> retorno = new ArrayList<>();
+    public CancelarNFCe(SefazGateway sefazGateway, ValidaNFCe validaNFCe, AssinarNFCe assinarNFCe) {
+        this.sefazGateway = sefazGateway;
+        this.validaNFCe = validaNFCe;
+        this.assinarNFCe = assinarNFCe;
+    }
 
     public ArrayList<String> cancelarNFCe(String justificativa, String uf, String cnpj, String chaveNFCe, String protocolo, LocalDateTime dataEvento, String tipoEmissao, TipoAmbienteEnum tipoAmbiente, Certificado certificado) throws FiscalException {
-        String url = fiscalUtil.getUrlNFCe("RecepcaoEvento", uf, Integer.parseInt(tipoAmbiente.getCodigo()));
+        return cancelarNfceResult(justificativa, uf, cnpj, chaveNFCe, protocolo, dataEvento, tipoEmissao, tipoAmbiente, certificado).toLegacyList();
+    }
 
-        String xmlEvento = createXml(fiscalUtil.ufToCodUf(uf), cnpj, chaveNFCe, 1L, "110111", 1L, protocolo, dataEvento, tipoAmbiente, justificativa, certificado);
+    public NfceCancellationResult cancelarNfceResult(String justificativa, String uf, String cnpj, String chaveNFCe, String protocolo, LocalDateTime dataEvento, String tipoEmissao, TipoAmbienteEnum tipoAmbiente, Certificado certificado) throws FiscalException {
+        String url = sefazGateway.getUrlNFCe(TipoServicoEnum.NFCE_RECEPCAO_EVENTO, uf, Integer.parseInt(tipoAmbiente.getCodigo()));
 
-        boolean validada = new ValidaNFCe().validaXml(xmlEvento, ServicosNFeEnum.CANCELAMENTO);
+        String xmlEvento = createXml(sefazGateway.ufToCodUf(uf), cnpj, chaveNFCe, 1L, "110111", 1L, protocolo, dataEvento, tipoAmbiente, justificativa, certificado);
+
+        boolean validada = validaNFCe.validaXml(xmlEvento, ServicosNFeEnum.CANCELAMENTO);
 
         if (validada) {
             String xmlConsulta = montaXmlConsulta(xmlEvento);
 
-            String retornoConsulta = fiscalUtil.consulta(url, xmlConsulta, certificado, "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento");
+            String retornoConsulta = sefazGateway.consulta(url, xmlConsulta, certificado, "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento");
 
-            String retEnvEvento = fiscalUtil.pegaTag(retornoConsulta, "retEnvEvento");
+            String retEnvEvento = sefazGateway.pegaTag(retornoConsulta, "retEnvEvento");
 
-            String infEvento = fiscalUtil.pegaTag(retornoConsulta, "infEvento");
+            String infEvento = sefazGateway.pegaTag(retornoConsulta, "infEvento");
 
-            montaRetorno(montaXmlFinal(fiscalUtil.pegaTag2(xmlEvento, "evento"), fiscalUtil.pegaTag2(retornoConsulta, "retEvento")), url, xmlConsulta);
+            NfceCancellationResult retorno = montaRetorno(montaXmlFinal(sefazGateway.pegaTag2(xmlEvento, "evento"), sefazGateway.pegaTag2(retornoConsulta, "retEvento")), url, xmlConsulta);
 
-            if (!fiscalUtil.pegaTag(retEnvEvento, "cStat").equals("128")) {
-                throw new FiscalException("Aviso", "Retorno do Evento ->  cSat - " + fiscalUtil.pegaTag(retEnvEvento, "cStat") + " <br> Motivo - " + fiscalUtil.pegaTag(retEnvEvento, "xMotivo") +
-                        "<br> Informações do Evento ->  cSat - " + fiscalUtil.pegaTag(infEvento, "cStat") + " <br> Motivo - " + fiscalUtil.pegaTag(infEvento, "xMotivo"));
-            } else if (!retorno.get(5).equals("135")) {
-                throw new FiscalException("Erro", "Informações do Evento ->  cSat - " + fiscalUtil.pegaTag(infEvento, "cStat") + " <br> Motivo - " + fiscalUtil.pegaTag(infEvento, "xMotivo"));
+            if (!sefazGateway.pegaTag(retEnvEvento, "cStat").equals("128")) {
+                throw new FiscalException("Aviso", "Retorno do Evento ->  cSat - " + sefazGateway.pegaTag(retEnvEvento, "cStat") + " <br> Motivo - " + sefazGateway.pegaTag(retEnvEvento, "xMotivo") +
+                        "<br> Informações do Evento ->  cSat - " + sefazGateway.pegaTag(infEvento, "cStat") + " <br> Motivo - " + sefazGateway.pegaTag(infEvento, "xMotivo"));
+            } else if (!"135".equals(retorno.cStat())) {
+                throw new FiscalException("Erro", "Informações do Evento ->  cSat - " + sefazGateway.pegaTag(infEvento, "cStat") + " <br> Motivo - " + sefazGateway.pegaTag(infEvento, "xMotivo"));
             }
 
             return retorno;
@@ -99,26 +113,28 @@ public class CancelarNFCe {
                 "</infEvento>" +
                 "</evento>";
 
-        dadosMsg = new AssinarNFCe().assinaEvento(dadosMsg, certificado, AssinaturaEnum.EVENTO);
+        dadosMsg = assinarNFCe.assinaEvento(dadosMsg, certificado, AssinaturaEnum.EVENTO);
 
         dadosXml += dadosMsg + "</envEvento>";
 
         return dadosXml;
     }
 
-    private void montaRetorno(String respostaConsulta, String url, String xmlConsulta) {
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "tpAmb"));            // Tipo ambiente
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "verAplic"));         // Versão
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "dhRegEvento"));      // Data e hora do registro do evento
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "tpEvento"));         // Tipo Evento
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "xEvento"));          // Evento
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "cStat"));            // Código do Status
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "xMotivo"));          // Motivo
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "nSeqEvento"));       // UF
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "chNFe"));            // Sequência Evento
-        retorno.add(fiscalUtil.pegaTag(respostaConsulta, "cOrgao"));           // Orgão
-        retorno.add(respostaConsulta);
-        retorno.add(url);                                                           // Url da consulta
-        retorno.add(xmlConsulta);
+    private NfceCancellationResult montaRetorno(String respostaConsulta, String url, String xmlConsulta) {
+        return new NfceCancellationResult(
+                sefazGateway.pegaTag(respostaConsulta, "tpAmb"),
+                sefazGateway.pegaTag(respostaConsulta, "verAplic"),
+                sefazGateway.pegaTag(respostaConsulta, "dhRegEvento"),
+                sefazGateway.pegaTag(respostaConsulta, "tpEvento"),
+                sefazGateway.pegaTag(respostaConsulta, "xEvento"),
+                sefazGateway.pegaTag(respostaConsulta, "cStat"),
+                sefazGateway.pegaTag(respostaConsulta, "xMotivo"),
+                sefazGateway.pegaTag(respostaConsulta, "nSeqEvento"),
+                sefazGateway.pegaTag(respostaConsulta, "chNFe"),
+                sefazGateway.pegaTag(respostaConsulta, "cOrgao"),
+                respostaConsulta,
+                url,
+                xmlConsulta
+        );
     }
 }

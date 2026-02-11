@@ -3,36 +3,48 @@ package com.lucast.vetcare.fiscal.nfe.funcionalidades.eventos.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.lucast.vetcare.fiscal.application.port.out.SefazGateway;
 import com.lucast.vetcare.fiscal.enums.TipoServicoEnum;
 import com.lucast.vetcare.fiscal.exception.FiscalException;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.eventos.requests.RequestInutilizaNFe;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.requests.RequestValidaNFe;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.services.AssinarNFeService;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.services.ValidaNFeService;
-import com.lucast.vetcare.fiscal.util.FiscalUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.lucast.vetcare.fiscal.enums.AssinaturaEnum;
 import com.lucast.vetcare.fiscal.enums.ServicosNFeEnum;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 @Service
-@Scope("prototype")
 public class InutilizaNFeService {
 
     private static final Logger logger = LoggerFactory.getLogger(InutilizaNFeService.class);
 
-    public String inutilizar(RequestInutilizaNFe request, ValidaNFeService validaNFeService, AssinarNFeService assinarNFeService) throws FiscalException {
+    private final ValidaNFeService validaNFeService;
+    private final AssinarNFeService assinarNFeService;
+    private final SefazGateway sefazGateway;
+
+    public InutilizaNFeService(
+            ValidaNFeService validaNFeService,
+            AssinarNFeService assinarNFeService,
+            SefazGateway sefazGateway
+    ) {
+        this.validaNFeService = validaNFeService;
+        this.assinarNFeService = assinarNFeService;
+        this.sefazGateway = sefazGateway;
+    }
+
+    public String inutilizar(RequestInutilizaNFe request) throws FiscalException {
 
         logger.info("Iniciando inutilização da NFe: modelo={}, serie={}, ano={}, nfIni={}, nfFin={}, cnpj={}",
                 request.getModelo(), request.getSerie(), request.getAno(), request.getNfIni(), request.getNfFin(), request.getCnpj());
 
-        String url = FiscalUtils.getUrlNFe(TipoServicoEnum.INUTILIZACAO, request.getCodigoUF(), request.getTipoAmbiente().getCodigo(), "1");
+        String url = sefazGateway.getUrlNFe(TipoServicoEnum.INUTILIZACAO, request.getCodigoUF(), request.getTipoAmbiente().getCodigo(), "1");
         logger.info("URL para inutilização: {}", url);
 
-        String xmlEvento = montaXmlEvento(request, assinarNFeService);
+        String xmlEvento = montaXmlEvento(request);
         logger.info("XML de evento gerado:\n{}", xmlEvento);
 
         boolean validada = validaNFeService.validaXml(montaRequestValidaNFe(xmlEvento));
@@ -42,12 +54,12 @@ public class InutilizaNFeService {
             String xmlConsulta = montaXmlConsulta(xmlEvento);
             logger.info("XML de consulta gerado:\n{}", xmlConsulta);
 
-            String retornoConsulta = FiscalUtils.consulta(url, xmlConsulta, request.getCertificado(),
+            String retornoConsulta = sefazGateway.consulta(url, xmlConsulta, request.getCertificado(),
                     "http://www.portalfiscal.inf.br/nfe/wsdl/NFeInutilizacao4/nfeInutilizacaoNF");
 
             logger.info("Retorno da consulta:\n{}", retornoConsulta);
 
-            List<String> retorno = montaRetorno(FiscalUtils.pegaTag2(retornoConsulta, "retInutNFe"));
+            List<String> retorno = montaRetorno(sefazGateway.pegaTag2(retornoConsulta, "retInutNFe"));
 
             if (retorno.size() > 2) {
                 String codigoStatus = retorno.get(2);
@@ -61,7 +73,7 @@ public class InutilizaNFeService {
             }
 
             logger.info("Inutilização realizada com sucesso.");
-            return xmlEvento + FiscalUtils.pegaTag2(retornoConsulta, "retInutNFe");
+            return xmlEvento + sefazGateway.pegaTag2(retornoConsulta, "retInutNFe");
         } else {
             logger.warn("Inutilização não validada!");
             throw new FiscalException("Aviso", "Inutilização não validada!");
@@ -79,12 +91,12 @@ public class InutilizaNFeService {
     private List<String> montaRetorno(String respostaConsulta) {
         List<String> retorno = new ArrayList<>();
 
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "tpAmb"));      // Tipo ambiente
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "verAplic"));   // Versão
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "cStat"));      // Código do Status
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "xMotivo"));    // Motivo
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "cUF"));        // UF
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "dhRecbto"));   // Data e Hora do Recebimento
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "tpAmb"));      // Tipo ambiente
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "verAplic"));   // Versão
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "cStat"));      // Código do Status
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "xMotivo"));    // Motivo
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "cUF"));        // UF
+        retorno.add(sefazGateway.pegaTag(respostaConsulta, "dhRecbto"));   // Data e Hora do Recebimento
 
         logger.info("Retorno inutilizar NFe montado: {}", retorno);
 
@@ -108,12 +120,12 @@ public class InutilizaNFeService {
                 "</soap12:Envelope>";
     }
 
-    private String montaXmlEvento(RequestInutilizaNFe request, AssinarNFeService assinarNFeService) throws FiscalException {
+    private String montaXmlEvento(RequestInutilizaNFe request) throws FiscalException {
 
         String idInutilizacao = "ID" + request.getCodigoUF() + request.getAno() % 100 + request.getCnpj() + request.getModelo() +
-                FiscalUtils.strZero(request.getSerie(), 3) +
-                FiscalUtils.strZero(Integer.parseInt(request.getNfIni()), 9) +
-                FiscalUtils.strZero(Integer.parseInt(request.getNfFin()), 9);
+                sefazGateway.strZero(request.getSerie(), 3) +
+                sefazGateway.strZero(Integer.parseInt(request.getNfIni()), 9) +
+                sefazGateway.strZero(Integer.parseInt(request.getNfFin()), 9);
 
         String dadosMensagem = "<inutNFe xmlns=\"http://www.portalfiscal.inf.br/nfe\" versao=\"4.00\">" +
                 "<infInut Id=\"" + idInutilizacao + "\">" +

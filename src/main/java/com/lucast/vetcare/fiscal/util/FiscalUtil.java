@@ -4,6 +4,7 @@ import com.lucast.vetcare.fiscal.certificado.Certificado;
 import com.lucast.vetcare.fiscal.exception.FiscalException;
 import com.lucast.vetcare.fiscal.nfe.xml.NFe;
 import com.lucast.vetcare.fiscal.nfe.xml.NFeProc;
+import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -51,6 +52,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
+@Component
 public class FiscalUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(FiscalUtil.class);

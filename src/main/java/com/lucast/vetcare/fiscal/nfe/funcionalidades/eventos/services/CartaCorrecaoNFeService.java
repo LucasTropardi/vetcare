@@ -4,23 +4,21 @@ import com.lucast.vetcare.fiscal.enums.AssinaturaEnum;
 import com.lucast.vetcare.fiscal.enums.ServicosNFeEnum;
 import com.lucast.vetcare.fiscal.enums.TipoServicoEnum;
 import com.lucast.vetcare.fiscal.exception.FiscalException;
+import com.lucast.vetcare.fiscal.application.port.out.SefazGateway;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.eventos.requests.RequestCartaCorrecaoNFe;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.requests.RequestValidaNFe;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.services.AssinarNFeService;
 import com.lucast.vetcare.fiscal.nfe.funcionalidades.operacoes.services.ValidaNFeService;
-import com.lucast.vetcare.fiscal.util.FiscalUtils;
+import com.lucast.vetcare.fiscal.nfe.result.NfeCartaCorrecaoResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@Scope("prototype")
 public class CartaCorrecaoNFeService {
 
     private static final Logger logger = LoggerFactory.getLogger(CartaCorrecaoNFeService.class);
@@ -28,20 +26,38 @@ public class CartaCorrecaoNFeService {
     public static final String STR_X_MOTIVO = "xMotivo";
     public static final String STR_C_STAT = "cStat";
 
-    public List<String> cce(RequestCartaCorrecaoNFe request, ValidaNFeService validaNFeService, AssinarNFeService assinarNFeService) throws FiscalException {
+    private final ValidaNFeService validaNFeService;
+    private final AssinarNFeService assinarNFeService;
+    private final SefazGateway sefazGateway;
+
+    public CartaCorrecaoNFeService(
+            ValidaNFeService validaNFeService,
+            AssinarNFeService assinarNFeService,
+            SefazGateway sefazGateway
+    ) {
+        this.validaNFeService = validaNFeService;
+        this.assinarNFeService = assinarNFeService;
+        this.sefazGateway = sefazGateway;
+    }
+
+    public List<String> cce(RequestCartaCorrecaoNFe request) throws FiscalException {
+        return cceResult(request).toLegacyList();
+    }
+
+    public NfeCartaCorrecaoResult cceResult(RequestCartaCorrecaoNFe request) throws FiscalException {
 
         long startTime = System.currentTimeMillis();
         logger.info("Início da Carta de Correção. Chave: {}, Sequência: {}, CNPJ: {}", request.getChaveNFe(), request.getSequencia(), request.getCnpj());
 
         try {
-            String url = FiscalUtils.getUrlNFe(
+            String url = sefazGateway.getUrlNFe(
                     TipoServicoEnum.EVENTO,
                     request.getCodigoUF(),
                     request.getTipoAmbiente().getCodigo(),
                     request.getTipoEmissao()
             );
 
-            String xmlEvento = montaXmlEvento(request, assinarNFeService);
+            String xmlEvento = montaXmlEvento(request);
 
             boolean validada = validaNFeService.validaXml(montaRequestValidaNFe(xmlEvento));
 
@@ -51,34 +67,34 @@ public class CartaCorrecaoNFeService {
             }
 
             String xmlFinal = montaXmlConsulta(xmlEvento);
-            String retornoEnvio = FiscalUtils.consulta(
+            String retornoEnvio = sefazGateway.consulta(
                     url,
                     xmlFinal,
                     request.getCertificado(),
                     "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento"
             );
 
-            String retEnvEvento = FiscalUtils.pegaTag(retornoEnvio, "retEnvEvento");
-            String infEvento = FiscalUtils.pegaTag(retornoEnvio, "infEvento");
+            String retEnvEvento = sefazGateway.pegaTag(retornoEnvio, "retEnvEvento");
+            String infEvento = sefazGateway.pegaTag(retornoEnvio, "infEvento");
 
-            if (!"128".equals(FiscalUtils.pegaTag(retEnvEvento, STR_C_STAT))) {
+            if (!"128".equals(sefazGateway.pegaTag(retEnvEvento, STR_C_STAT))) {
                 String msg = String.format("Retorno do Evento -> cStat - %s <br> Motivo - %s; Informações do Evento -> cStat - %s <br> Motivo - %s",
-                        FiscalUtils.pegaTag(retEnvEvento, STR_C_STAT),
-                        FiscalUtils.pegaTag(retEnvEvento, STR_X_MOTIVO),
-                        FiscalUtils.pegaTag(infEvento, STR_C_STAT),
-                        FiscalUtils.pegaTag(infEvento, STR_X_MOTIVO));
+                        sefazGateway.pegaTag(retEnvEvento, STR_C_STAT),
+                        sefazGateway.pegaTag(retEnvEvento, STR_X_MOTIVO),
+                        sefazGateway.pegaTag(infEvento, STR_C_STAT),
+                        sefazGateway.pegaTag(infEvento, STR_X_MOTIVO));
                 logger.error(msg);
                 throw new FiscalException("Aviso", msg);
-            } else if (!"135".equals(FiscalUtils.pegaTag(infEvento, STR_C_STAT))) {
+            } else if (!"135".equals(sefazGateway.pegaTag(infEvento, STR_C_STAT))) {
                 String msg = String.format("Informações do Evento -> cStat - %s <br> Motivo - %s",
-                        FiscalUtils.pegaTag(infEvento, STR_C_STAT),
-                        FiscalUtils.pegaTag(infEvento, STR_X_MOTIVO));
+                        sefazGateway.pegaTag(infEvento, STR_C_STAT),
+                        sefazGateway.pegaTag(infEvento, STR_X_MOTIVO));
                 logger.error(msg);
                 throw new FiscalException("Erro", msg);
             }
 
             logger.info("Carta de Correção processada com sucesso. Chave: {}", request.getChaveNFe());
-            return montaRetorno(infEvento, montaXmlFinal(FiscalUtils.pegaTag2(xmlEvento, "evento"), FiscalUtils.pegaTag2(retornoEnvio, "retEvento")));
+            return montaRetorno(infEvento, montaXmlFinal(sefazGateway.pegaTag2(xmlEvento, "evento"), sefazGateway.pegaTag2(retornoEnvio, "retEvento")));
         } catch (Exception e) {
             throw new FiscalException("Erro", "Erro inesperado na Carta de Correção: " + e.getMessage());
         } finally {
@@ -117,7 +133,7 @@ public class CartaCorrecaoNFeService {
                 "</soap12:Envelope>";
     }
 
-    private String montaXmlEvento(RequestCartaCorrecaoNFe request, AssinarNFeService assinarNFeService) throws FiscalException {
+    private String montaXmlEvento(RequestCartaCorrecaoNFe request) throws FiscalException {
         try {
             String condicaoUso = "A Carta de Correcao e disciplinada pelo paragrafo 1o-A do art. 7o do Convenio S/N, " +
                     "de 15 de dezembro de 1970 e pode ser utilizada para regularizacao de erro ocorrido na " +
@@ -160,21 +176,21 @@ public class CartaCorrecaoNFeService {
         }
     }
 
-    private List<String> montaRetorno(String respostaConsulta, String xmlFinal) {
-        List<String> retorno = new ArrayList<>();
-
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "tpAmb"));        // Tipo ambiente
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "verAplic"));     // Versão
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "cOrgao"));       // Órgão
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, STR_C_STAT));         // Código do Status
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, STR_X_MOTIVO));       // Motivo
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "chNFe"));        // Chave NFe
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "tpEvento"));     // Tipo Evento
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "xEvento"));      // Evento
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "nSeqEvento"));   // Sequência Evento
-        retorno.add(FiscalUtils.pegaTag(respostaConsulta, "dhRegEvento"));  // Data e hora do registro do evento
-        retorno.add(xmlFinal);
-        retorno.add(respostaConsulta);
+    private NfeCartaCorrecaoResult montaRetorno(String respostaConsulta, String xmlFinal) {
+        NfeCartaCorrecaoResult retorno = new NfeCartaCorrecaoResult(
+                sefazGateway.pegaTag(respostaConsulta, "tpAmb"),
+                sefazGateway.pegaTag(respostaConsulta, "verAplic"),
+                sefazGateway.pegaTag(respostaConsulta, "cOrgao"),
+                sefazGateway.pegaTag(respostaConsulta, STR_C_STAT),
+                sefazGateway.pegaTag(respostaConsulta, STR_X_MOTIVO),
+                sefazGateway.pegaTag(respostaConsulta, "chNFe"),
+                sefazGateway.pegaTag(respostaConsulta, "tpEvento"),
+                sefazGateway.pegaTag(respostaConsulta, "xEvento"),
+                sefazGateway.pegaTag(respostaConsulta, "nSeqEvento"),
+                sefazGateway.pegaTag(respostaConsulta, "dhRegEvento"),
+                xmlFinal,
+                respostaConsulta
+        );
 
         logger.info("Retorno CCe montado: {}", retorno);
 

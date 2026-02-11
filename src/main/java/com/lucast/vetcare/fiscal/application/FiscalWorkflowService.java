@@ -3,6 +3,7 @@ package com.lucast.vetcare.fiscal.application;
 import com.lucast.vetcare.common.enums.PaymentStatus;
 import com.lucast.vetcare.common.enums.SaleStatus;
 import com.lucast.vetcare.fiscal.FiscalProperties;
+import com.lucast.vetcare.fiscal.certificado.CertificadoLoaderService;
 import com.lucast.vetcare.fiscal.document.FiscalEventEntity;
 import com.lucast.vetcare.fiscal.document.repository.FiscalEventRepository;
 import com.lucast.vetcare.fiscal.domain.FiscalDocumentEntity;
@@ -25,7 +26,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Objects;
 
 @Service
@@ -44,6 +44,7 @@ public class FiscalWorkflowService {
     private final SaleRepository saleRepository;
     private final FiscalProperties props;
     private final NfceIssuanceService nfceIssuanceService;
+    private final CertificadoLoaderService certificadoLoaderService;
     private final NfceXmlBuilder xmlBuilder;
 
     public FiscalWorkflowService(
@@ -52,7 +53,8 @@ public class FiscalWorkflowService {
             SaleRepository saleRepository,
             FiscalProperties props,
             NfceXmlBuilder xmlBuilder,
-            NfceIssuanceService nfceIssuanceService
+            NfceIssuanceService nfceIssuanceService,
+            CertificadoLoaderService certificadoLoaderService
     ) {
         this.documentRepository = documentRepository;
         this.eventRepository = eventRepository;
@@ -60,6 +62,7 @@ public class FiscalWorkflowService {
         this.props = props;
         this.xmlBuilder = xmlBuilder;
         this.nfceIssuanceService = nfceIssuanceService;
+        this.certificadoLoaderService = certificadoLoaderService;
     }
 
     @Transactional
@@ -139,12 +142,10 @@ public class FiscalWorkflowService {
             TipoAmbienteEnum amb = "PRODUCAO".equalsIgnoreCase(env) ? TipoAmbienteEnum.PRODUCAO : TipoAmbienteEnum.HOMOLOGACAO;
 
             Long lote = System.currentTimeMillis() % 1_000_000L;
-            ArrayList<String> ret = nfceIssuanceService.send(doc.getXmlSigned(), lote, codigoUf, amb, cert);
-
-            // retorno (EnviaNFCe.montaRetorno): [tpAmb, verAplic, dhRecbto, nProt, digVal, cStat, xMotivo, cUF, chNFe, versao, respostaXml]
-            String protocol = getSafe(ret, 3);
-            String accessKey = getSafe(ret, 8);
-            String responseXml = getSafe(ret, 10);
+            var ret = nfceIssuanceService.sendResult(doc.getXmlSigned(), lote, codigoUf, amb, cert);
+            String protocol = ret.nProt();
+            String accessKey = ret.chNFe();
+            String responseXml = ret.rawResponseXml();
 
             doc.setProtocol(protocol);
             doc.setAccessKey(accessKey);
@@ -227,7 +228,7 @@ public class FiscalWorkflowService {
         try {
             byte[] pfxBytes = Files.readAllBytes(Path.of(path));
             String b64 = java.util.Base64.getEncoder().encodeToString(pfxBytes);
-            return nfceIssuanceService.buildCertFromBase64Pfx(b64, senha);
+            return certificadoLoaderService.fromBase64Pfx(b64, senha);
         } catch (Exception e) {
             throw new FiscalException("Erro", "Falha ao ler certificado em " + path + ": " + e.getMessage());
         }
@@ -264,9 +265,4 @@ public class FiscalWorkflowService {
         return (provided == null || provided.isBlank()) ? fallback : provided;
     }
 
-    private static String getSafe(ArrayList<String> list, int idx) {
-        if (list == null) return null;
-        if (idx < 0 || idx >= list.size()) return null;
-        return list.get(idx);
-    }
 }
