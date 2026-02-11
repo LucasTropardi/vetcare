@@ -68,6 +68,20 @@ public class CustomerCompanyController {
         return service.listByTutor(tutorId);
     }
 
+    @GetMapping("/by-tutor/{tutorId}/paged")
+    @Operation(
+            summary = "List customer companies by tutor (paged)",
+            description = "Returns active customer companies associated with a tutor using pagination"
+    )
+    public Page<CustomerCompanyListItemResponse> listByTutorPaged(
+            @PathVariable Long tutorId,
+            @ParameterObject
+            @PageableDefault(size = 20, sort = "legalName")
+            Pageable pageable
+    ) {
+        return service.listByTutorPaged(tutorId, pageable);
+    }
+
     @PutMapping("/{id}")
     @Operation(
             summary = "Update customer company",

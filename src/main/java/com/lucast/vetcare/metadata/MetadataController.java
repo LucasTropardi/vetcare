@@ -6,6 +6,11 @@ import com.lucast.vetcare.common.enums.ProductCategory;
 import com.lucast.vetcare.common.enums.ItemType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +37,19 @@ public class MetadataController {
                 .toList();
     }
 
+    @GetMapping("/product-categories/paged")
+    @Operation(
+            summary = "List product categories (paged)",
+            description = "Returns available product categories using pagination"
+    )
+    public Page<EnumOptionDTO> productCategoriesPaged(
+            @ParameterObject
+            @PageableDefault(size = 20)
+            Pageable pageable
+    ) {
+        return toPage(productCategories(), pageable);
+    }
+
     @GetMapping("/item-types")
     @Operation(
             summary = "List item types",
@@ -43,6 +61,19 @@ public class MetadataController {
                 .toList();
     }
 
+    @GetMapping("/item-types/paged")
+    @Operation(
+            summary = "List item types (paged)",
+            description = "Returns available item types using pagination"
+    )
+    public Page<EnumOptionDTO> itemTypesPaged(
+            @ParameterObject
+            @PageableDefault(size = 20)
+            Pageable pageable
+    ) {
+        return toPage(itemTypes(), pageable);
+    }
+
     @GetMapping("/fiscal-origins")
     @Operation(
             summary = "List fiscal origins",
@@ -52,5 +83,28 @@ public class MetadataController {
         return Arrays.stream(FiscalOrigin.values())
                 .map(o -> new EnumOptionDTO(o.name(), o.getLabel()))
                 .toList();
+    }
+
+    @GetMapping("/fiscal-origins/paged")
+    @Operation(
+            summary = "List fiscal origins (paged)",
+            description = "Returns available fiscal origins using pagination"
+    )
+    public Page<EnumOptionDTO> fiscalOriginsPaged(
+            @ParameterObject
+            @PageableDefault(size = 20)
+            Pageable pageable
+    ) {
+        return toPage(fiscalOrigins(), pageable);
+    }
+
+    private Page<EnumOptionDTO> toPage(List<EnumOptionDTO> values, Pageable pageable) {
+        int start = Math.toIntExact(pageable.getOffset());
+        if (start >= values.size()) {
+            return new PageImpl<>(List.of(), pageable, values.size());
+        }
+
+        int end = Math.min(start + pageable.getPageSize(), values.size());
+        return new PageImpl<>(values.subList(start, end), pageable, values.size());
     }
 }
