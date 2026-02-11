@@ -4,6 +4,7 @@ import com.lucast.vetcare.auth.dto.CreateUserRequest;
 import com.lucast.vetcare.auth.dto.UpdateMeRequest;
 import com.lucast.vetcare.auth.dto.UpdateUserRequest;
 import com.lucast.vetcare.auth.dto.UserResponse;
+import com.lucast.vetcare.auth.dto.UserStatsResponse;
 import com.lucast.vetcare.common.enums.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +64,19 @@ public class UserService {
     public Page<UserResponse> list(Pageable pageable) {
         requireAdmin();
         return userRepository.findAll(pageable).map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public UserStatsResponse stats() {
+        requireAdmin();
+        var total = userRepository.count();
+        var active = userRepository.countByActive(true);
+        var inactive = userRepository.countByActive(false);
+        var admin = userRepository.countByRole(Role.ADMIN);
+        var vet = userRepository.countByRole(Role.VET);
+        var reception = userRepository.countByRole(Role.RECEPTION);
+
+        return new UserStatsResponse(total, active, inactive, admin, vet, reception);
     }
 
     @Transactional(readOnly = true)

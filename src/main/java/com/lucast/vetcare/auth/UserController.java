@@ -4,6 +4,7 @@ import com.lucast.vetcare.auth.dto.CreateUserRequest;
 import com.lucast.vetcare.auth.dto.UpdateMeRequest;
 import com.lucast.vetcare.auth.dto.UpdateUserRequest;
 import com.lucast.vetcare.auth.dto.UserResponse;
+import com.lucast.vetcare.auth.dto.UserStatsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -48,6 +49,15 @@ public class UserController {
             @PageableDefault(size = 50, sort = { "name" })
             Pageable pageable) {
         return userService.list(pageable);
+    }
+
+    @GetMapping("/stats")
+    @Operation(
+            summary = "Get user stats",
+            description = "Retrieve aggregated user metrics"
+    )
+    public UserStatsResponse stats() {
+        return userService.stats();
     }
 
     @GetMapping("/{id}")
