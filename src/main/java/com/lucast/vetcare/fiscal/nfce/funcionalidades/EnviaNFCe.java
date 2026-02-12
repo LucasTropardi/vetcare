@@ -1,37 +1,46 @@
 package com.lucast.vetcare.fiscal.nfce.funcionalidades;
 
 import com.lucast.vetcare.fiscal.certificado.Certificado;
+import com.lucast.vetcare.fiscal.application.port.out.SefazGateway;
+import com.lucast.vetcare.fiscal.enums.TipoServicoEnum;
 import com.lucast.vetcare.fiscal.enums.TipoAmbienteEnum;
 import com.lucast.vetcare.fiscal.exception.FiscalException;
-import com.lucast.vetcare.fiscal.util.FiscalUtil;
+import com.lucast.vetcare.fiscal.nfce.result.NfceAuthorizationResult;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 
+@Service
 public class EnviaNFCe {
 
-    private ArrayList<String> retorno = new ArrayList<String>();
+    private final SefazGateway sefazGateway;
 
-    private FiscalUtil nFeUtil = new FiscalUtil();
+    public EnviaNFCe(SefazGateway sefazGateway) {
+        this.sefazGateway = sefazGateway;
+    }
 
     public ArrayList<String> enviaNFCe(String xml, Long numeroLote, String codigoUF, TipoAmbienteEnum tipoAmbiente, Certificado certificado) throws FiscalException, InterruptedException {
-        String conteudoXml = nFeUtil.removeXMLTag(xml);
+        return enviaNfceResult(xml, numeroLote, codigoUF, tipoAmbiente, certificado).toLegacyList();
+    }
 
-        conteudoXml = nFeUtil.pegaTag2(conteudoXml, "NFe");
+    public NfceAuthorizationResult enviaNfceResult(String xml, Long numeroLote, String codigoUF, TipoAmbienteEnum tipoAmbiente, Certificado certificado) throws FiscalException, InterruptedException {
+        String conteudoXml = sefazGateway.removeXmlTag(xml);
+
+        conteudoXml = sefazGateway.pegaTag2(conteudoXml, "NFe");
 
         String xmlEvento = montaXmlEvento(numeroLote, conteudoXml);
 
-        String url = nFeUtil.getUrlNFCe("NFeAutorizacao", codigoUF, Integer.parseInt(tipoAmbiente.getCodigo()));
+        String url = sefazGateway.getUrlNFCe(TipoServicoEnum.NFCE_NFE_AUTORIZACAO, codigoUF, Integer.parseInt(tipoAmbiente.getCodigo()));
 
-        String retornoConsulta = nFeUtil.consulta(url, xmlEvento, certificado, "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote");
+        String retornoConsulta = sefazGateway.consulta(url, xmlEvento, certificado, "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4/nfeAutorizacaoLote");
 
         if (retornoConsulta != null && !retornoConsulta.isBlank()) {
-            String infProt = retornoConsulta.contains("infProt") ? nFeUtil.pegaTag(retornoConsulta, "infProt") : nFeUtil.pegaTag(retornoConsulta, "retEnviNFe");
+            String infProt = retornoConsulta.contains("infProt") ? sefazGateway.pegaTag(retornoConsulta, "infProt") : sefazGateway.pegaTag(retornoConsulta, "retEnviNFe");
 
-            if (nFeUtil.pegaTag(infProt, "cStat").equals("100") && nFeUtil.pegaTag(infProt, "xMotivo").equals("Autorizado o uso da NF-e")) {
-                montaRetorno(nFeUtil.pegaTag2(retornoConsulta, "protNFe"));
-                return retorno;
+            if (sefazGateway.pegaTag(infProt, "cStat").equals("100") && sefazGateway.pegaTag(infProt, "xMotivo").equals("Autorizado o uso da NF-e")) {
+                return montaRetorno(sefazGateway.pegaTag2(retornoConsulta, "protNFe"));
             } else {
-                throw new FiscalException("Aviso", "CSTAT - " + nFeUtil.pegaTag(infProt, "cStat") + " <br> Motivo - " + nFeUtil.pegaTag(infProt, "xMotivo"));
+                throw new FiscalException("Aviso", "CSTAT - " + sefazGateway.pegaTag(infProt, "cStat") + " <br> Motivo - " + sefazGateway.pegaTag(infProt, "xMotivo"));
             }
         } else {
             throw new FiscalException("Erro", "Erro ao realizar a consulta");
@@ -59,17 +68,19 @@ public class EnviaNFCe {
                 + "</soap12:Envelope>";
     }
 
-    private void montaRetorno(String respostaConsulta) {
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "tpAmb"));            // Tipo ambiente
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "verAplic"));         // Versão
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "dhRecbto"));         // Data e Hora do Recebimento
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "nProt"));            // Número do Protocolo
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "digVal"));           // DigVal
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "cStat"));            // Código do Status
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "xMotivo"));          // Motivo
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "cUF"));              // UF
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "chNFe"));            // Chave NFe
-        retorno.add(nFeUtil.pegaTag(respostaConsulta, "versao").isEmpty() ? "Sem Versao" : nFeUtil.pegaTag(respostaConsulta, "versao"));         //Versão
-        retorno.add(respostaConsulta);
+    private NfceAuthorizationResult montaRetorno(String respostaConsulta) {
+        return new NfceAuthorizationResult(
+                sefazGateway.pegaTag(respostaConsulta, "tpAmb"),
+                sefazGateway.pegaTag(respostaConsulta, "verAplic"),
+                sefazGateway.pegaTag(respostaConsulta, "dhRecbto"),
+                sefazGateway.pegaTag(respostaConsulta, "nProt"),
+                sefazGateway.pegaTag(respostaConsulta, "digVal"),
+                sefazGateway.pegaTag(respostaConsulta, "cStat"),
+                sefazGateway.pegaTag(respostaConsulta, "xMotivo"),
+                sefazGateway.pegaTag(respostaConsulta, "cUF"),
+                sefazGateway.pegaTag(respostaConsulta, "chNFe"),
+                sefazGateway.pegaTag(respostaConsulta, "versao").isEmpty() ? "Sem Versao" : sefazGateway.pegaTag(respostaConsulta, "versao"),
+                respostaConsulta
+        );
     }
 }

@@ -1,10 +1,11 @@
 package com.lucast.vetcare.fiscal.nfce.funcionalidades;
 
 import com.lucast.vetcare.fiscal.certificado.Certificado;
+import com.lucast.vetcare.fiscal.application.port.out.SefazGateway;
 import com.lucast.vetcare.fiscal.certificado.CertificadoService;
 import com.lucast.vetcare.fiscal.enums.AssinaturaEnum;
 import com.lucast.vetcare.fiscal.exception.FiscalException;
-import com.lucast.vetcare.fiscal.util.FiscalUtil;
+import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -45,11 +46,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Service
 public class AssinarNFCe {
 
-    private static PrivateKey privateKey;
+    private final SefazGateway sefazGateway;
 
-    private static KeyInfo keyInfo;
+    public AssinarNFCe(SefazGateway sefazGateway) {
+        this.sefazGateway = sefazGateway;
+    }
 
     public String assinaNfce(String stringXml, Certificado certificado, AssinaturaEnum tipoAssinatura) throws FiscalException, Exception {
         stringXml = stringXml.replaceAll("\r\n", "").replaceAll("\n", "").replaceAll(System.lineSeparator(), "");
@@ -68,12 +72,12 @@ public class AssinarNFCe {
         KeyStore keyStore = CertificadoService.getKeyStore(certificado);
         KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(
                 certificado.getNome(), new KeyStore.PasswordProtection(certificado.getSenha().toCharArray()));
-        privateKey = pkEntry.getPrivateKey();
+        PrivateKey privateKey = pkEntry.getPrivateKey();
 
         KeyInfoFactory keyInfoFactory = signatureFactory.getKeyInfoFactory();
         X509Certificate cert = CertificadoService.getCertificate(certificado, keyStore);
         X509Data x509Data = keyInfoFactory.newX509Data(Collections.singletonList(cert));
-        keyInfo = keyInfoFactory.newKeyInfo(Collections.singletonList(x509Data));
+        KeyInfo keyInfo = keyInfoFactory.newKeyInfo(Collections.singletonList(x509Data));
 
         XPathFactory xPathFactory = XPathFactory.newInstance();
         XPath xpath = xPathFactory.newXPath();
@@ -101,7 +105,7 @@ public class AssinarNFCe {
             signature.sign(dsc);
         }
 
-        return new FiscalUtil().removeXMLTag(formataXML(outputXML(document), "infNFe"));
+        return sefazGateway.removeXmlTag(formataXML(outputXML(document), "infNFe"));
     }
 
     public String assinaEvento(String xml, Certificado certificado, AssinaturaEnum evento) {
@@ -114,7 +118,7 @@ public class AssinarNFCe {
 
             KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry) key.getEntry(certificado.getNome(),
                     new KeyStore.PasswordProtection(certificado.getSenha().toCharArray()));
-            privateKey = pkEntry.getPrivateKey();
+            PrivateKey privateKey = pkEntry.getPrivateKey();
 
             KeyInfoFactory keyInfoFactory = signatureFactory.getKeyInfoFactory();
             List<X509Certificate> certs = new ArrayList<>();
@@ -122,7 +126,7 @@ public class AssinarNFCe {
             certs.add(CertificadoService.getCertificate(certificado, key));
             X509Data x509Data = keyInfoFactory.newX509Data(certs);
 
-            keyInfo = keyInfoFactory.newKeyInfo(Collections.singletonList(x509Data));
+            KeyInfo keyInfo = keyInfoFactory.newKeyInfo(Collections.singletonList(x509Data));
 
             XPathFactory xpf = XPathFactory.newInstance();
             XPath xPath = xpf.newXPath();
@@ -134,7 +138,7 @@ public class AssinarNFCe {
                 assinarEvento(evento, signatureFactory, transformList, privateKey, keyInfo, document, i);
             }
 
-            return new FiscalUtil().removeXMLTag(formataXML(outputXML(document), "infEvento"));
+            return sefazGateway.removeXmlTag(formataXML(outputXML(document), "infEvento"));
         } catch (Exception e) {
             e.printStackTrace();
             return "";
