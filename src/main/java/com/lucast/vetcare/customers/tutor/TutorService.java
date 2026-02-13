@@ -61,12 +61,32 @@ public class TutorService {
     }
 
     @Transactional(readOnly = true)
-    public Page<TutorListItemResponse> list(String query, Pageable pageable) {
-        Page<TutorEntity> page = (query == null || query.isBlank())
-                ? tutorRepository.findByActiveTrue(pageable)
-                : tutorRepository.findByActiveTrueAndNameContainingIgnoreCase(query.trim(), pageable);
+    public Page<TutorListItemResponse> list(
+            String query,
+            Boolean active,
+            Boolean hasCompany,
+            Boolean hasPet,
+            Boolean hasContact,
+            Pageable pageable
+    ) {
+        boolean hasQuery = query != null && !query.isBlank();
+        String q = hasQuery ? query.trim() : "";
 
-        return page.map(this::toListItem);
+        return tutorRepository
+                .search(hasQuery, q, active, hasCompany, hasPet, hasContact, pageable)
+                .map(this::toListItem);
+    }
+
+    @Transactional(readOnly = true)
+    public TutorStatsResponse stats() {
+        var total = tutorRepository.count();
+        var active = tutorRepository.countByActive(true);
+        var inactive = tutorRepository.countByActive(false);
+        var withCompany = tutorRepository.countWithActiveCompany();
+        var withPet = tutorRepository.countWithActivePet();
+        var withoutContact = tutorRepository.countWithoutContact();
+
+        return new TutorStatsResponse(total, active, inactive, withCompany, withPet, withoutContact);
     }
 
     @Transactional

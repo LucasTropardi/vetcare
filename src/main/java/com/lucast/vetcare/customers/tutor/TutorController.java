@@ -47,15 +47,28 @@ public class TutorController {
     @GetMapping
     @Operation(
             summary = "List tutors",
-            description = "List all tutors with pagination, sorting and optional search query"
+            description = "List tutors with pagination, sorting, optional search query and optional BI filters"
     )
     public Page<TutorListItemResponse> list(
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Boolean hasCompany,
+            @RequestParam(required = false) Boolean hasPet,
+            @RequestParam(required = false) Boolean hasContact,
             @ParameterObject
             @PageableDefault(size = 20, sort = "name")
             Pageable pageable
     ) {
-        return tutorService.list(query, pageable);
+        return tutorService.list(query, active, hasCompany, hasPet, hasContact, pageable);
+    }
+
+    @GetMapping("/stats")
+    @Operation(
+            summary = "Get tutor stats",
+            description = "Returns summary counts used by tutor dashboard filters"
+    )
+    public TutorStatsResponse stats() {
+        return tutorService.stats();
     }
 
     @PutMapping("/{id}")
