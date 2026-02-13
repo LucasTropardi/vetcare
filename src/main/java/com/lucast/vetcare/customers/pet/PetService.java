@@ -2,6 +2,7 @@ package com.lucast.vetcare.customers.pet;
 
 import com.lucast.vetcare.auth.AuthContext;
 import com.lucast.vetcare.common.enums.Role;
+import com.lucast.vetcare.common.enums.Species;
 import com.lucast.vetcare.customers.pet.dto.*;
 import com.lucast.vetcare.customers.tutor.TutorRepository;
 import org.springframework.data.domain.Page;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
-import java.util.Set;
 
 @Service
 public class PetService {
@@ -27,9 +27,12 @@ public class PetService {
 
     @Transactional
     public PetResponse create(CreatePetRequest req) {
-        // garantir que o tutor existe
-        tutorRepository.findById(req.tutorId())
+        var tutor = tutorRepository.findById(req.tutorId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tutor not found"));
+
+        if (!tutor.isActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tutor is inactive");
+        }
 
         var now = OffsetDateTime.now();
 
@@ -57,30 +60,34 @@ public class PetService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PetListItemResponse> list(Long tutorId, String query, Pageable pageable) {
-        boolean hasTutor = tutorId != null;
+    public Page<PetListItemResponse> list(Long tutorId, String query, Boolean active, Species species, Boolean othersSpecies, Pageable pageable) {
         boolean hasQuery = query != null && !query.isBlank();
-        String q = hasQuery ? query.trim() : null;
+        String q = hasQuery ? query.trim() : "";
 
-        Page<PetEntity> page;
-        if (hasTutor && hasQuery) {
-            page = petRepository.findByActiveTrueAndTutorIdAndNameContainingIgnoreCase(tutorId, q, pageable);
-        } else if (hasTutor) {
-            page = petRepository.findByActiveTrueAndTutorId(tutorId, pageable);
-        } else if (hasQuery) {
-            page = petRepository.findByActiveTrueAndNameContainingIgnoreCase(q, pageable);
-        } else {
-            page = petRepository.findByActiveTrue(pageable);
-        }
+        return petRepository.search(active, tutorId, species, othersSpecies != null && othersSpecies, hasQuery, q, pageable).map(this::toListItem);
+    }
 
-        return page.map(this::toListItem);
+    @Transactional(readOnly = true)
+    public PetStatsResponse stats() {
+        var total = petRepository.count();
+        var active = petRepository.countByActive(true);
+        var inactive = petRepository.countByActive(false);
+        var dogs = petRepository.countBySpecies(Species.DOG);
+        var cats = petRepository.countBySpecies(Species.CAT);
+        var others = petRepository.countOthersSpecies();
+
+        return new PetStatsResponse(total, active, inactive, dogs, cats, others);
     }
 
     @Transactional
     public PetResponse update(Long id, UpdatePetRequest req) {
 
-        tutorRepository.findById(req.tutorId())
+        var tutor = tutorRepository.findById(req.tutorId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tutor not found"));
+
+        if (!tutor.isActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tutor is inactive");
+        }
 
         var p = petRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pet not found"));
@@ -119,6 +126,7 @@ public class PetService {
         return new PetListItemResponse(
                 p.getId(),
                 p.getTutorId(),
+                p.getTutor() == null ? null : p.getTutor().getName(),
                 p.getName(),
                 p.getSpecies(),
                 p.isActive()

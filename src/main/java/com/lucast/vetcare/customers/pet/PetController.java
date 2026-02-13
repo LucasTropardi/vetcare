@@ -1,5 +1,6 @@
 package com.lucast.vetcare.customers.pet;
 
+import com.lucast.vetcare.common.enums.Species;
 import com.lucast.vetcare.customers.pet.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,14 +49,26 @@ public class PetController {
     @GetMapping
     @Operation(
             summary = "List pets",
-            description = "Lists pets with optional filters by tutor and search query"
+            description = "Lists pets with optional filters by tutor, species, status and search query"
     )
     public Page<PetListItemResponse> list(
             @RequestParam(required = false) Long tutorId,
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Species species,
+            @RequestParam(required = false) Boolean othersSpecies,
             Pageable pageable
     ) {
-        return petService.list(tutorId, query, pageable);
+        return petService.list(tutorId, query, active, species, othersSpecies, pageable);
+    }
+
+    @GetMapping("/stats")
+    @Operation(
+            summary = "Get pet stats",
+            description = "Returns summary counts used by pet dashboard filters"
+    )
+    public PetStatsResponse stats() {
+        return petService.stats();
     }
 
     @PutMapping("/{id}")

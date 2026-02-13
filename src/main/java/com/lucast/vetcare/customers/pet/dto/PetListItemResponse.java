@@ -5,6 +5,7 @@ import com.lucast.vetcare.common.enums.Species;
 public record PetListItemResponse(
         Long id,
         Long tutorId,
+        String tutorName,
         String name,
         Species species,
         boolean active
