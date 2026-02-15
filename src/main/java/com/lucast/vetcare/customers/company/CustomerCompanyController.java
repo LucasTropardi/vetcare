@@ -47,16 +47,29 @@ public class CustomerCompanyController {
     @GetMapping
     @Operation(
             summary = "List customer companies",
-            description = "List customer companies with pagination, optional tutorId and search query"
+            description = "List customer companies with pagination, sorting, optional search query and optional BI filters"
     )
     public Page<CustomerCompanyListItemResponse> list(
             @RequestParam(required = false) Long tutorId,
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Boolean hasAddress,
+            @RequestParam(required = false) Boolean hasFiscal,
+            @RequestParam(required = false) Boolean hasContact,
             @ParameterObject
             @PageableDefault(size = 20, sort = "legalName")
             Pageable pageable
     ) {
-        return service.list(tutorId, query, pageable);
+        return service.list(tutorId, query, active, hasAddress, hasFiscal, hasContact, pageable);
+    }
+
+    @GetMapping("/stats")
+    @Operation(
+            summary = "Get customer company stats",
+            description = "Returns summary counts used by customer companies dashboard filters"
+    )
+    public CustomerCompanyStatsResponse stats() {
+        return service.stats();
     }
 
     @GetMapping("/by-tutor/{tutorId}")

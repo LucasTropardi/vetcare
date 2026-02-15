@@ -40,7 +40,9 @@ public class CustomerCompanyService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tutor not found"));
 
         companyRepository.findByTutorIdAndActiveTrue(req.tutorId())
-                .ifPresent(c -> { throw new ResponseStatusException(HttpStatus.CONFLICT, "Tutor already has an active company"); });
+                .ifPresent(c -> {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Tutor already has an active company");
+                });
 
         var now = OffsetDateTime.now();
 
@@ -87,30 +89,41 @@ public class CustomerCompanyService {
 
         var addr = addressRepository.findById(c.getId()).orElse(null);
         var fiscal = fiscalRepository.findById(c.getId()).orElse(null);
-        return toResponse(c,
+        return toResponse(
+                c,
                 addr == null ? null : toAddressResponse(addr),
                 fiscal == null ? null : toFiscalResponse(fiscal)
         );
     }
 
     @Transactional(readOnly = true)
-    public Page<CustomerCompanyListItemResponse> list(Long tutorId, String query, Pageable pageable) {
-        boolean hasTutor = tutorId != null;
+    public Page<CustomerCompanyListItemResponse> list(
+            Long tutorId,
+            String query,
+            Boolean active,
+            Boolean hasAddress,
+            Boolean hasFiscal,
+            Boolean hasContact,
+            Pageable pageable
+    ) {
         boolean hasQuery = query != null && !query.isBlank();
-        String q = hasQuery ? query.trim() : null;
+        String q = hasQuery ? query.trim() : "";
 
-        Page<CustomerCompanyEntity> page;
-        if (hasTutor && hasQuery) {
-            page = companyRepository.searchActiveByTutorId(tutorId, q, pageable);
-        } else if (hasTutor) {
-            page = companyRepository.findByActiveTrueAndTutorId(tutorId, pageable);
-        } else if (hasQuery) {
-            page = companyRepository.searchActive(q, pageable);
-        } else {
-            page = companyRepository.findByActiveTrue(pageable);
-        }
+        return companyRepository
+                .search(hasQuery, q, tutorId, active, hasAddress, hasFiscal, hasContact, pageable)
+                .map(this::toListItem);
+    }
 
-        return page.map(this::toListItem);
+    @Transactional(readOnly = true)
+    public CustomerCompanyStatsResponse stats() {
+        var total = companyRepository.count();
+        var active = companyRepository.countByActive(true);
+        var inactive = companyRepository.countByActive(false);
+        var withAddress = companyRepository.countWithAddress();
+        var withFiscal = companyRepository.countWithFiscal();
+        var withoutContact = companyRepository.countWithoutContact();
+
+        return new CustomerCompanyStatsResponse(total, active, inactive, withAddress, withFiscal, withoutContact);
     }
 
     @Transactional(readOnly = true)

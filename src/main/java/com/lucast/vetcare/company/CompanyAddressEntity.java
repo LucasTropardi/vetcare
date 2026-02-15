@@ -39,8 +39,14 @@ public class CompanyAddressEntity {
     @Column(name = "state_uf", nullable = false, length = 2)
     private String stateUf;
 
+    @Column(name = "country", nullable = false, length = 60)
+    private String country;
+
     public Long getCompanyId() { return companyId; }
+    public void setCompanyId(Long companyId) { this.companyId = companyId; }
+
     public CompanyEntity getCompany() { return company; }
+    public void setCompany(CompanyEntity company) { this.company = company; }
 
     public String getZipCode() { return zipCode; }
     public void setZipCode(String zipCode) { this.zipCode = zipCode; }
@@ -65,4 +71,7 @@ public class CompanyAddressEntity {
 
     public String getStateUf() { return stateUf; }
     public void setStateUf(String stateUf) { this.stateUf = stateUf; }
+
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
 }

@@ -29,7 +29,10 @@ public class CompanyFiscalConfigEntity {
     private Crt crt;
 
     public Long getCompanyId() { return companyId; }
+    public void setCompanyId(Long companyId) { this.companyId = companyId; }
+
     public CompanyEntity getCompany() { return company; }
+    public void setCompany(CompanyEntity company) { this.company = company; }
 
     public String getIe() { return ie; }
     public void setIe(String ie) { this.ie = ie; }
