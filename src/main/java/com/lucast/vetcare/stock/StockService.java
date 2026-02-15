@@ -8,8 +8,9 @@ import com.lucast.vetcare.stock.dto.ProductStockBalanceListDTO;
 import com.lucast.vetcare.stock.dto.ProductStockBalanceResponse;
 import com.lucast.vetcare.stock.dto.StockMovementResponse;
 import org.springframework.data.domain.Page;
-
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -241,7 +242,39 @@ public class StockService {
 
     @Transactional(readOnly = true)
     public Page<ProductStockBalanceListDTO> listBalances(String query, Boolean belowMinStock, Pageable pageable) {
-        return balanceRepository.listBalances(query, belowMinStock, pageable);
+        Pageable normalizedPageable = normalizeBalancePageable(pageable);
+        return balanceRepository.listBalances(query, belowMinStock, normalizedPageable);
+    }
+
+    private Pageable normalizeBalancePageable(Pageable pageable) {
+        if (pageable == null) {
+            return PageRequest.of(0, 20, Sort.by(Sort.Order.asc("product.name")));
+        }
+
+        Sort sort = pageable.getSort();
+        if (sort.isUnsorted()) {
+            return PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by(Sort.Order.asc("product.name"))
+            );
+        }
+
+        Sort normalizedSort = Sort.by(
+                sort.stream()
+                        .map(order -> {
+                            String property = order.getProperty();
+                            String mappedProperty = switch (property) {
+                                case "name" -> "product.name";
+                                case "sku" -> "product.sku";
+                                default -> property;
+                            };
+                            return new Sort.Order(order.getDirection(), mappedProperty);
+                        })
+                        .toList()
+        );
+
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), normalizedSort);
     }
 
     private BigDecimal nvl(BigDecimal v) {
