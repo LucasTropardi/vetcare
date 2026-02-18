@@ -2,20 +2,24 @@ package com.lucast.vetcare.clinic;
 
 import com.lucast.vetcare.clinic.dto.*;
 import com.lucast.vetcare.common.enums.AppointmentStatus;
+import com.lucast.vetcare.common.enums.AppointmentType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/api/appointments")
 @Tag(
         name = "Appointments",
-        description = "Operations related to veterinary appointments and medical records"
+        description = "Operations related to VET/PETSHOP appointments and medical records"
 )
 public class AppointmentController {
 
@@ -29,7 +33,7 @@ public class AppointmentController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
             summary = "Open appointment",
-            description = "Open a new veterinary appointment"
+            description = "Create a new appointment"
     )
     public AppointmentResponse open(@RequestBody @Valid OpenAppointmentRequest req) {
         return service.open(req);
@@ -52,10 +56,14 @@ public class AppointmentController {
     public Page<AppointmentResponse> list(
             @RequestParam(required = false) Long petId,
             @RequestParam(required = false) Long vetUserId,
+            @RequestParam(required = false) Long serviceProductId,
+            @RequestParam(required = false) AppointmentType appointmentType,
             @RequestParam(required = false) AppointmentStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime scheduledFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime scheduledTo,
             @ParameterObject Pageable pageable
     ) {
-        return service.list(petId, vetUserId, status, pageable);
+        return service.list(petId, vetUserId, serviceProductId, appointmentType, status, scheduledFrom, scheduledTo, pageable);
     }
 
     @PatchMapping("/{id}/assign-vet")

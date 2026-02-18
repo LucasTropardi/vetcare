@@ -1,6 +1,7 @@
 package com.lucast.vetcare.clinic.appointment;
 
 import com.lucast.vetcare.common.enums.AppointmentStatus;
+import com.lucast.vetcare.common.enums.AppointmentType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,22 @@ public class AppointmentEntity {
 
     @Column(name="veterinarian_user_id")
     private Long veterinarianUserId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "appointment_type", nullable = false, length = 20)
+    private AppointmentType appointmentType;
+
+    @Column(name = "scheduled_start_at", nullable = false)
+    private OffsetDateTime scheduledStartAt;
+
+    @Column(name = "scheduled_end_at", nullable = false)
+    private OffsetDateTime scheduledEndAt;
+
+    @Column(name = "service_product_id")
+    private Long serviceProductId;
+
+    @Column(length = 500)
+    private String notes;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -57,6 +74,9 @@ public class AppointmentEntity {
     void onCreate() {
         var now = OffsetDateTime.now();
         if (openedAt == null) openedAt = now;
+        if (appointmentType == null) appointmentType = AppointmentType.VET;
+        if (scheduledStartAt == null) scheduledStartAt = openedAt;
+        if (scheduledEndAt == null) scheduledEndAt = scheduledStartAt.plusMinutes(30);
         if (status == null) status = AppointmentStatus.OPEN;
         createdAt = now;
         updatedAt = now;
