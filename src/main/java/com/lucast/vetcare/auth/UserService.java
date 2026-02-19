@@ -5,11 +5,11 @@ import com.lucast.vetcare.auth.dto.UpdateMeRequest;
 import com.lucast.vetcare.auth.dto.UpdateUserRequest;
 import com.lucast.vetcare.auth.dto.UserResponse;
 import com.lucast.vetcare.auth.dto.UserStatsResponse;
+import com.lucast.vetcare.auth.keycloak.KeycloakAdminService;
 import com.lucast.vetcare.common.enums.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,30 +20,36 @@ import java.time.OffsetDateTime;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final KeycloakAdminService keycloakAdminService;
 
     public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       KeycloakAdminService keycloakAdminService) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.keycloakAdminService = keycloakAdminService;
     }
 
     @Transactional
     public UserResponse createUser(CreateUserRequest req) {
-        var currentUser = AuthContext.requireUser();
+        requireAdmin();
 
-        if (currentUser.getRole() != Role.ADMIN) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only ADMIN can create users");
-        }
-
-        if (userRepository.findByEmail(req.email()).isPresent()) {
+        if (userRepository.findByEmailIgnoreCase(req.email()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
 
+        validatePasswordConfirmation(req.password(), req.confirmPassword());
+
+        keycloakAdminService.ensureUser(
+                req.email().trim(),
+                req.name().trim(),
+                true,
+                req.password(),
+                req.role()
+        );
+
         var user = new UserEntity();
-        user.setName(req.name());
-        user.setEmail(req.email());
-        user.setPasswordHash(passwordEncoder.encode(req.password()));
+        user.setName(req.name().trim());
+        user.setEmail(req.email().trim());
+        user.setPasswordHash("OIDC_EXTERNAL_ACCOUNT");
         user.setRole(req.role());
         user.setActive(true);
         user.setCreatedAt(OffsetDateTime.now());
@@ -100,23 +106,35 @@ public class UserService {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        // email único
+        String nextName = req.name() != null ? req.name().trim() : user.getName();
+        String nextEmail = req.email() != null ? req.email().trim() : user.getEmail();
+        Role nextRole = req.role() != null ? req.role() : user.getRole();
+        boolean nextActive = req.active() != null ? req.active() : user.isActive();
+
         if (req.email() != null && !req.email().equalsIgnoreCase(user.getEmail())) {
-            if (userRepository.existsByEmail(req.email())) {
+            if (userRepository.existsByEmailIgnoreCase(req.email())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
             }
-            user.setEmail(req.email());
         }
-
-        if (req.name() != null) user.setName(req.name());
-        if (req.role() != null) user.setRole(req.role());
-        if (req.active() != null) user.setActive(req.active());
 
         if (req.password() != null && !req.password().isBlank()) {
-            user.setPasswordHash(passwordEncoder.encode(req.password()));
+            validatePasswordConfirmation(req.password(), req.confirmPassword());
         }
 
+        keycloakAdminService.ensureUser(
+                nextEmail,
+                nextName,
+                nextActive,
+                req.password(),
+                nextRole
+        );
+
+        user.setName(nextName);
+        user.setEmail(nextEmail);
+        user.setRole(nextRole);
+        user.setActive(nextActive);
         user.setUpdatedAt(OffsetDateTime.now());
+
         return toResponse(userRepository.save(user));
     }
 
@@ -124,19 +142,22 @@ public class UserService {
     public UserResponse updateMe(UpdateMeRequest req) {
         var current = AuthContext.requireUser();
 
-        // email único
         if (req.email() != null && !req.email().equalsIgnoreCase(current.getEmail())) {
-            if (userRepository.existsByEmail(req.email())) {
+            if (userRepository.existsByEmailIgnoreCase(req.email())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
             }
-            current.setEmail(req.email());
+            current.setEmail(req.email().trim());
         }
 
-        if (req.name() != null) current.setName(req.name());
+        if (req.name() != null) current.setName(req.name().trim());
 
-        if (req.password() != null && !req.password().isBlank()) {
-            current.setPasswordHash(passwordEncoder.encode(req.password()));
-        }
+        keycloakAdminService.ensureUser(
+                current.getEmail(),
+                current.getName(),
+                current.isActive(),
+                null,
+                current.getRole()
+        );
 
         current.setUpdatedAt(OffsetDateTime.now());
         return toResponse(userRepository.save(current));
@@ -149,11 +170,18 @@ public class UserService {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        // bloquear auto-delete do admin logado
         var current = AuthContext.requireUser();
         if (current.getId().equals(user.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot deactivate your own user");
         }
+
+        keycloakAdminService.ensureUser(
+                user.getEmail(),
+                user.getName(),
+                false,
+                null,
+                user.getRole()
+        );
 
         user.setActive(false);
         user.setUpdatedAt(OffsetDateTime.now());
@@ -167,19 +195,40 @@ public class UserService {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        // bloquear auto-delete do admin logado
         var current = AuthContext.requireUser();
         if (current.getId().equals(user.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot deactivate your own user");
         }
 
+        keycloakAdminService.ensureUser(
+                user.getEmail(),
+                user.getName(),
+                false,
+                null,
+                user.getRole()
+        );
+
         userRepository.deleteById(id);
     }
 
     private void requireAdmin() {
-        var u = AuthContext.requireUser();
-        if (u.getRole() != Role.ADMIN) {
+        Role role = AuthContext.requireRole();
+        if (role != Role.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only ADMIN can perform this action");
+        }
+    }
+
+    private void validatePasswordConfirmation(String password, String confirmPassword) {
+        if (password == null || password.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required");
+        }
+
+        if (confirmPassword == null || confirmPassword.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password confirmation is required");
+        }
+
+        if (!password.equals(confirmPassword)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password confirmation does not match");
         }
     }
 

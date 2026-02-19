@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -18,30 +17,16 @@ import org.springframework.web.server.ResponseStatusException;
 )
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-    }
-
     @Operation(
-            summary = "User login",
-            description = "Authenticate user using email and password and return a JWT access token"
+            summary = "Legacy user login (deprecated)",
+            description = "Deprecated endpoint. Authentication now uses OIDC Authorization Code + PKCE on the client"
     )
     @PostMapping("/login")
+    @Deprecated(forRemoval = true)
     public LoginResponse login(@RequestBody @Valid LoginRequest request) {
-        var user = userRepository.findByEmail(request.email())
-                .filter(UserEntity::isActive)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
-
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
-        }
-
-        return new LoginResponse(jwtService.generateAccessToken(user), "Bearer");
+        throw new ResponseStatusException(
+                HttpStatus.GONE,
+                "Deprecated endpoint. Use OIDC Authorization Code + PKCE with an external identity provider"
+        );
     }
 }

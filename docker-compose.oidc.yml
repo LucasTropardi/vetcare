@@ -1,0 +1,28 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: vetcare-keycloak
+    command:
+      - start-dev
+      - --http-port=8081
+      - --import-realm
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8081"
+    volumes:
+      - ${KEYCLOAK_REALM_IMPORT_PATH:-./infra/keycloak/realm-import}:/opt/keycloak/data/import:ro
+      - ${KEYCLOAK_THEMES_PATH:-./infra/keycloak/themes}:/opt/keycloak/themes:ro
+      - keycloak_data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8081'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  keycloak_data:
