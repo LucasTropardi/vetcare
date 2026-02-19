@@ -6,13 +6,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
-@Component
+/**
+ * @deprecated Legacy filter for internal JWTs. Must stay disabled in OIDC mode.
+ */
+@Deprecated(forRemoval = true)
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;

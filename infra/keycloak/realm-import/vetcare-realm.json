@@ -1,0 +1,63 @@
+{
+  "realm": "vetcare",
+  "enabled": true,
+  "displayName": "VetCare",
+  "loginTheme": "vetcare",
+  "roles": {
+    "realm": [
+      { "name": "ADMIN" },
+      { "name": "VET" },
+      { "name": "RECEPTION" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "vetcare-front",
+      "name": "vetcare-front",
+      "description": "ERP Web client",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "http://localhost:5173/login",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/login"
+      },
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@vetcare.local",
+      "email": "admin@vetcare.local",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "VetCare",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN"
+      ]
+    }
+  ]
+}

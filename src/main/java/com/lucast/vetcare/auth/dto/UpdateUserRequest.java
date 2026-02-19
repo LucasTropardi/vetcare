@@ -7,6 +7,7 @@ public record UpdateUserRequest(
         String name,
         @Email String email,
         String password,
+        String confirmPassword,
         Role role,
         Boolean active
 ) {}

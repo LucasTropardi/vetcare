@@ -1,0 +1,91 @@
+:root {
+  --vetcare-bg-1: #f3f5f8;
+  --vetcare-bg-2: #e7ebf1;
+  --vetcare-card: #ffffff;
+  --vetcare-text: #0f172a;
+  --vetcare-muted: #475569;
+  --vetcare-primary: #3b82f6;
+  --vetcare-primary-hover: #2563eb;
+  --vetcare-border: #dbe3ef;
+}
+
+body.login-pf {
+  background: radial-gradient(circle at 20% 20%, var(--vetcare-bg-1), var(--vetcare-bg-2));
+  color: var(--vetcare-text);
+  font-family: "Segoe UI", "Inter", "Noto Sans", sans-serif;
+}
+
+.login-pf body {
+  background: transparent;
+}
+
+#kc-header-wrapper {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--vetcare-text);
+  font-weight: 700;
+}
+
+#kc-header-wrapper::before {
+  content: "";
+  display: block;
+  width: 140px;
+  height: 90px;
+  margin: 0 auto 12px;
+  background: url("../img/logo-vetcare.png") center/contain no-repeat;
+}
+
+/* Force centered card layout and avoid full-width stretched login form */
+.login-pf-page .card-pf,
+.login-pf-page .pf-v5-c-card {
+  background: var(--vetcare-card);
+  border: 1px solid var(--vetcare-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+  width: min(92vw, 520px);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.login-pf-page .pf-v5-c-login,
+.login-pf-page .pf-v5-c-login__main,
+.login-pf-page #kc-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#kc-content-wrapper,
+#kc-form-wrapper,
+.login-pf-page .pf-v5-c-form {
+  color: var(--vetcare-text);
+  width: 100%;
+}
+
+.pf-v5-c-form-control,
+.login-pf-page input[type="text"],
+.login-pf-page input[type="password"],
+.login-pf-page input[type="email"] {
+  border: 1px solid var(--vetcare-border);
+  border-radius: 10px;
+}
+
+.pf-v5-c-button.pf-m-primary,
+.login-pf-page .btn-primary {
+  background-color: var(--vetcare-primary);
+  border-color: var(--vetcare-primary);
+  border-radius: 10px;
+}
+
+.pf-v5-c-button.pf-m-primary:hover,
+.login-pf-page .btn-primary:hover {
+  background-color: var(--vetcare-primary-hover);
+  border-color: var(--vetcare-primary-hover);
+}
+
+#kc-info-wrapper,
+#kc-form-options,
+.kc-login-tooltip,
+.pf-v5-c-form__helper-text {
+  color: var(--vetcare-muted);
+}

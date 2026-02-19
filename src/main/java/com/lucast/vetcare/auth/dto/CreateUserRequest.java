@@ -9,5 +9,6 @@ public record CreateUserRequest(
         @NotBlank String name,
         @Email @NotBlank String email,
         @NotBlank String password,
+        @NotBlank String confirmPassword,
         @NotNull Role role
 ) {}
