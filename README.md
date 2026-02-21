@@ -92,7 +92,7 @@ docker compose -f docker-compose.oidc.yml down
 
 Imported from `infra/keycloak/realm-import/vetcare-realm.json`:
 - Realm: `vetcare`
-- Client (public + PKCE): `vetcare-front`
+- Clients (public + PKCE): `vetcare-front`, `vetcare-clinic`, `vetcare-pos`
 - Realm roles: `ADMIN`, `VET`, `RECEPTION`
 - Test user: `admin@vetcare.local` / `admin123` (role `ADMIN`)
 
