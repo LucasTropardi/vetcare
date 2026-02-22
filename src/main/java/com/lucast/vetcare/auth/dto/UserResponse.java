@@ -7,5 +7,8 @@ public record UserResponse(
         String name,
         String email,
         Role role,
-        boolean active
+        boolean active,
+        String professionalLicense,
+        String signatureImageBase64,
+        String signatureImageContentType
 ) {}

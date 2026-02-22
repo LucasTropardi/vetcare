@@ -10,10 +10,14 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -24,9 +28,11 @@ import java.time.OffsetDateTime;
 public class AppointmentController {
 
     private final AppointmentService service;
+    private final PrescriptionPdfService prescriptionPdfService;
 
-    public AppointmentController(AppointmentService service) {
+    public AppointmentController(AppointmentService service, PrescriptionPdfService prescriptionPdfService) {
         this.service = service;
+        this.prescriptionPdfService = prescriptionPdfService;
     }
 
     @PostMapping
@@ -118,6 +124,70 @@ public class AppointmentController {
             @RequestBody @Valid UpsertMedicalRecordRequest req
     ) {
         return service.upsertMedicalRecord(id, req);
+    }
+
+    @GetMapping("/{id}/petshop-record")
+    @Operation(
+            summary = "Get petshop record",
+            description = "Retrieve the petshop execution record of an appointment"
+    )
+    public PetshopRecordResponse getPetshopRecord(@PathVariable Long id) {
+        return service.getPetshopRecord(id);
+    }
+
+    @PutMapping("/{id}/petshop-record")
+    @Operation(
+            summary = "Upsert petshop record",
+            description = "Create or update the petshop execution record of an appointment"
+    )
+    public PetshopRecordResponse upsertPetshopRecord(
+            @PathVariable Long id,
+            @RequestBody @Valid UpsertPetshopRecordRequest req
+    ) {
+        return service.upsertPetshopRecord(id, req);
+    }
+
+    @GetMapping("/{id}/prescriptions")
+    @Operation(
+            summary = "List prescriptions",
+            description = "List prescriptions linked to a VET appointment"
+    )
+    public List<PrescriptionResponse> listPrescriptions(@PathVariable Long id) {
+        return service.listPrescriptions(id);
+    }
+
+    @PostMapping("/{id}/prescriptions")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(
+            summary = "Create prescription",
+            description = "Create a prescription for a VET appointment"
+    )
+    public PrescriptionResponse createPrescription(
+            @PathVariable Long id,
+            @RequestBody @Valid CreatePrescriptionRequest req
+    ) {
+        return service.createPrescription(id, req);
+    }
+
+    @GetMapping("/{appointmentId}/prescriptions/{prescriptionId}/pdf")
+    @Operation(
+            summary = "Export prescription PDF",
+            description = "Generate a PDF for a specific prescription"
+    )
+    public ResponseEntity<byte[]> exportPrescriptionPdf(
+            @PathVariable Long appointmentId,
+            @PathVariable Long prescriptionId,
+            @RequestParam(defaultValue = "inline") String disposition
+    ) {
+        byte[] bytes = prescriptionPdfService.generatePrescriptionPdf(appointmentId, prescriptionId);
+
+        String mode = "attachment".equalsIgnoreCase(disposition) ? "attachment" : "inline";
+        String filename = "receita-" + appointmentId + "-" + prescriptionId + ".pdf";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, mode + "; filename=\"" + filename + "\"")
+                .body(bytes);
     }
 
     @PostMapping("/{id}/diagnoses")

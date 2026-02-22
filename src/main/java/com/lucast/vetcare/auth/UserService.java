@@ -19,6 +19,8 @@ import java.time.OffsetDateTime;
 @Service
 public class UserService {
 
+    private static final int MAX_SIGNATURE_BASE64_CHARS = 3_000_000;
+
     private final UserRepository userRepository;
     private final KeycloakAdminService keycloakAdminService;
 
@@ -55,15 +57,11 @@ public class UserService {
         user.setCreatedAt(OffsetDateTime.now());
         user.setUpdatedAt(OffsetDateTime.now());
 
+        applyProfessionalData(user, req.professionalLicense(), req.signatureImageBase64(), req.signatureImageContentType(), req.role());
+
         var saved = userRepository.save(user);
 
-        return new UserResponse(
-                saved.getId(),
-                saved.getName(),
-                saved.getEmail(),
-                saved.getRole(),
-                saved.isActive()
-        );
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -133,6 +131,9 @@ public class UserService {
         user.setEmail(nextEmail);
         user.setRole(nextRole);
         user.setActive(nextActive);
+
+        applyProfessionalData(user, req.professionalLicense(), req.signatureImageBase64(), req.signatureImageContentType(), nextRole);
+
         user.setUpdatedAt(OffsetDateTime.now());
 
         return toResponse(userRepository.save(user));
@@ -150,6 +151,8 @@ public class UserService {
         }
 
         if (req.name() != null) current.setName(req.name().trim());
+
+        applyProfessionalData(current, req.professionalLicense(), req.signatureImageBase64(), req.signatureImageContentType(), current.getRole());
 
         keycloakAdminService.ensureUser(
                 current.getEmail(),
@@ -232,7 +235,70 @@ public class UserService {
         }
     }
 
+    private void applyProfessionalData(UserEntity user,
+                                       String professionalLicense,
+                                       String signatureImageBase64,
+                                       String signatureImageContentType,
+                                       Role role) {
+        if (role != Role.VET) {
+            user.setProfessionalLicense(null);
+            user.setSignatureImageBase64(null);
+            user.setSignatureImageContentType(null);
+            user.setSignatureUpdatedAt(null);
+            return;
+        }
+
+        if (professionalLicense != null) {
+            user.setProfessionalLicense(blankToNull(professionalLicense));
+        }
+
+        if (signatureImageBase64 != null) {
+            String normalized = normalizeBase64(signatureImageBase64);
+            user.setSignatureImageBase64(normalized);
+            user.setSignatureUpdatedAt(normalized == null ? null : OffsetDateTime.now());
+        }
+
+        if (signatureImageContentType != null) {
+            user.setSignatureImageContentType(blankToNull(signatureImageContentType));
+        }
+
+        if (user.getSignatureImageBase64() != null && user.getSignatureImageContentType() == null) {
+            user.setSignatureImageContentType("image/png");
+        }
+    }
+
+    private String normalizeBase64(String value) {
+        String normalized = blankToNull(value);
+        if (normalized == null) return null;
+
+        if (normalized.length() > MAX_SIGNATURE_BASE64_CHARS) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Signature image is too large");
+        }
+
+        if (normalized.startsWith("data:")) {
+            int comma = normalized.indexOf(',');
+            normalized = comma > 0 ? normalized.substring(comma + 1) : normalized;
+        }
+
+        return normalized.replaceAll("\\s+", "");
+    }
+
+    private String blankToNull(String v) {
+        if (v == null) return null;
+        String t = v.trim();
+        return t.isEmpty() ? null : t;
+    }
+
     private UserResponse toResponse(UserEntity u) {
-        return new UserResponse(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.isActive());
+        return new UserResponse(
+                u.getId(),
+                u.getName(),
+                u.getEmail(),
+                u.getRole(),
+                u.isActive(),
+                u.getProfessionalLicense(),
+                u.getSignatureImageBase64(),
+                u.getSignatureImageContentType()
+        );
     }
 }

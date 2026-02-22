@@ -9,5 +9,8 @@ public record UpdateUserRequest(
         String password,
         String confirmPassword,
         Role role,
-        Boolean active
+        Boolean active,
+        String professionalLicense,
+        String signatureImageBase64,
+        String signatureImageContentType
 ) {}

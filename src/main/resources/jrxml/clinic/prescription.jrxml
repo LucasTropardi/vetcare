@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="clinic-prescription"
+              pageWidth="595" pageHeight="842" columnWidth="555"
+              leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20"
+              whenNoDataType="AllSectionsNoDetail">
+
+    <parameter name="LOGO_IMAGE" class="java.awt.Image"/>
+    <parameter name="SIGNATURE_IMAGE" class="java.awt.Image"/>
+    <parameter name="COMPANY_NAME" class="java.lang.String"/>
+    <parameter name="COMPANY_CNPJ" class="java.lang.String"/>
+    <parameter name="COMPANY_PHONE" class="java.lang.String"/>
+    <parameter name="COMPANY_EMAIL" class="java.lang.String"/>
+
+    <parameter name="PRESCRIPTION_TITLE" class="java.lang.String"/>
+    <parameter name="PRESCRIPTION_CREATED_AT" class="java.lang.String"/>
+    <parameter name="PRESCRIPTION_VALID_UNTIL" class="java.lang.String"/>
+    <parameter name="PRESCRIPTION_GUIDANCE" class="java.lang.String"/>
+
+    <parameter name="PET_NAME" class="java.lang.String"/>
+    <parameter name="PET_SPECIES" class="java.lang.String"/>
+    <parameter name="TUTOR_NAME" class="java.lang.String"/>
+    <parameter name="VET_NAME" class="java.lang.String"/>
+    <parameter name="VET_LICENSE" class="java.lang.String"/>
+
+    <field name="medicationName" class="java.lang.String"/>
+    <field name="dosage" class="java.lang.String"/>
+    <field name="frequency" class="java.lang.String"/>
+    <field name="duration" class="java.lang.String"/>
+    <field name="route" class="java.lang.String"/>
+    <field name="notes" class="java.lang.String"/>
+
+    <title>
+        <band height="250">
+            <image>
+                <reportElement x="0" y="0" width="90" height="60"/>
+                <imageExpression><![CDATA[$P{LOGO_IMAGE}]]></imageExpression>
+            </image>
+
+            <textField>
+                <reportElement x="100" y="0" width="455" height="22"/>
+                <textElement>
+                    <font size="14" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{COMPANY_NAME}]]></textFieldExpression>
+            </textField>
+
+            <textField>
+                <reportElement x="100" y="24" width="455" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["CNPJ: " + ($P{COMPANY_CNPJ} == null ? "-" : $P{COMPANY_CNPJ}) + "   Tel: " + ($P{COMPANY_PHONE} == null ? "-" : $P{COMPANY_PHONE})]]></textFieldExpression>
+            </textField>
+
+            <textField>
+                <reportElement x="100" y="42" width="455" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA[$P{COMPANY_EMAIL} == null ? "" : $P{COMPANY_EMAIL}]]></textFieldExpression>
+            </textField>
+
+            <staticText>
+                <reportElement x="0" y="72" width="555" height="24"/>
+                <textElement textAlignment="Center"><font size="16" isBold="true"/></textElement>
+                <text><![CDATA[RECEITUARIO VETERINARIO]]></text>
+            </staticText>
+
+            <textField>
+                <reportElement x="0" y="102" width="380" height="18"/>
+                <textElement><font size="11" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{PRESCRIPTION_TITLE} == null ? "Receita" : $P{PRESCRIPTION_TITLE}]]></textFieldExpression>
+            </textField>
+
+            <textField>
+                <reportElement x="390" y="102" width="165" height="18"/>
+                <textElement textAlignment="Right"><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Emissao: " + ($P{PRESCRIPTION_CREATED_AT} == null ? "-" : $P{PRESCRIPTION_CREATED_AT})]]></textFieldExpression>
+            </textField>
+
+            <textField>
+                <reportElement x="0" y="124" width="280" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Pet: " + ($P{PET_NAME} == null ? "-" : $P{PET_NAME}) + " (" + ($P{PET_SPECIES} == null ? "-" : $P{PET_SPECIES}) + ")"]]></textFieldExpression>
+            </textField>
+
+            <textField>
+                <reportElement x="285" y="124" width="270" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Tutor: " + ($P{TUTOR_NAME} == null ? "-" : $P{TUTOR_NAME})]]></textFieldExpression>
+            </textField>
+
+            <textField>
+                <reportElement x="0" y="144" width="555" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Veterinario: " + ($P{VET_NAME} == null ? "-" : $P{VET_NAME}) + "   Registro: " + ($P{VET_LICENSE} == null ? "-" : $P{VET_LICENSE})]]></textFieldExpression>
+            </textField>
+
+            <textField>
+                <reportElement x="0" y="164" width="555" height="18"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Validade da receita: " + ($P{PRESCRIPTION_VALID_UNTIL} == null ? "-" : $P{PRESCRIPTION_VALID_UNTIL})]]></textFieldExpression>
+            </textField>
+
+            <textField isStretchWithOverflow="true">
+                <reportElement x="0" y="186" width="555" height="52"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Orientacoes: " + ($P{PRESCRIPTION_GUIDANCE} == null ? "" : $P{PRESCRIPTION_GUIDANCE})]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="20">
+            <staticText><reportElement x="0" y="0" width="150" height="20"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Medicamento]]></text></staticText>
+            <staticText><reportElement x="152" y="0" width="70" height="20"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Dosagem]]></text></staticText>
+            <staticText><reportElement x="224" y="0" width="90" height="20"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Frequencia]]></text></staticText>
+            <staticText><reportElement x="316" y="0" width="70" height="20"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Duracao]]></text></staticText>
+            <staticText><reportElement x="388" y="0" width="60" height="20"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Via]]></text></staticText>
+            <staticText><reportElement x="450" y="0" width="105" height="20"/><textElement><font size="9" isBold="true"/></textElement><text><![CDATA[Observacoes]]></text></staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="20">
+            <textField><reportElement x="0" y="0" width="150" height="20"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{medicationName}]]></textFieldExpression></textField>
+            <textField><reportElement x="152" y="0" width="70" height="20"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{dosage}]]></textFieldExpression></textField>
+            <textField><reportElement x="224" y="0" width="90" height="20"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{frequency}]]></textFieldExpression></textField>
+            <textField><reportElement x="316" y="0" width="70" height="20"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{duration}]]></textFieldExpression></textField>
+            <textField><reportElement x="388" y="0" width="60" height="20"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{route}]]></textFieldExpression></textField>
+            <textField><reportElement x="450" y="0" width="105" height="20"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{notes}]]></textFieldExpression></textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="120">
+            <line>
+                <reportElement x="235" y="82" width="320" height="1"/>
+            </line>
+            <image scaleImage="RetainShape" hAlign="Center" vAlign="Middle">
+                <reportElement x="245" y="0" width="300" height="78"/>
+                <imageExpression><![CDATA[$P{SIGNATURE_IMAGE}]]></imageExpression>
+            </image>
+            <textField>
+                <reportElement x="235" y="86" width="320" height="14"/>
+                <textElement textAlignment="Center"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{VET_NAME} == null ? "Veterinario responsavel" : $P{VET_NAME}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="235" y="100" width="320" height="14"/>
+                <textElement textAlignment="Center"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{VET_LICENSE} == null ? "" : "Registro: " + $P{VET_LICENSE}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+</jasperReport>

@@ -5,21 +5,19 @@ import com.lucast.vetcare.auth.UserRepository;
 import com.lucast.vetcare.catalog.ProductRepository;
 import com.lucast.vetcare.clinic.appointment.AppointmentEntity;
 import com.lucast.vetcare.clinic.appointment.AppointmentRepository;
-import com.lucast.vetcare.clinic.dto.AddDiagnosisRequest;
-import com.lucast.vetcare.clinic.dto.AddProcedureRequest;
-import com.lucast.vetcare.clinic.dto.AppointmentResponse;
-import com.lucast.vetcare.clinic.dto.CancelAppointmentRequest;
-import com.lucast.vetcare.clinic.dto.DiagnosisResponse;
-import com.lucast.vetcare.clinic.dto.MedicalRecordResponse;
-import com.lucast.vetcare.clinic.dto.OpenAppointmentRequest;
-import com.lucast.vetcare.clinic.dto.ProcedureResponse;
-import com.lucast.vetcare.clinic.dto.UpsertMedicalRecordRequest;
+import com.lucast.vetcare.clinic.dto.*;
 import com.lucast.vetcare.clinic.medical.MedicalRecordDiagnosisEntity;
 import com.lucast.vetcare.clinic.medical.MedicalRecordDiagnosisRepository;
 import com.lucast.vetcare.clinic.medical.MedicalRecordEntity;
 import com.lucast.vetcare.clinic.medical.MedicalRecordProcedureEntity;
 import com.lucast.vetcare.clinic.medical.MedicalRecordProcedureRepository;
 import com.lucast.vetcare.clinic.medical.MedicalRecordRepository;
+import com.lucast.vetcare.clinic.petshop.AppointmentPetshopRecordEntity;
+import com.lucast.vetcare.clinic.petshop.AppointmentPetshopRecordRepository;
+import com.lucast.vetcare.clinic.prescription.PrescriptionEntity;
+import com.lucast.vetcare.clinic.prescription.PrescriptionItemEntity;
+import com.lucast.vetcare.clinic.prescription.PrescriptionItemRepository;
+import com.lucast.vetcare.clinic.prescription.PrescriptionRepository;
 import com.lucast.vetcare.common.enums.AppointmentStatus;
 import com.lucast.vetcare.common.enums.AppointmentType;
 import com.lucast.vetcare.common.enums.ItemType;
@@ -34,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.*;
 
 @Service
 public class AppointmentService {
@@ -46,6 +45,9 @@ public class AppointmentService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final MedicalRecordDiagnosisRepository diagnosisRepository;
     private final MedicalRecordProcedureRepository procedureRepository;
+    private final AppointmentPetshopRecordRepository petshopRecordRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final PrescriptionItemRepository prescriptionItemRepository;
 
     public AppointmentService(
             AppointmentRepository appointmentRepository,
@@ -54,7 +56,10 @@ public class AppointmentService {
             ProductRepository productRepository,
             MedicalRecordRepository medicalRecordRepository,
             MedicalRecordDiagnosisRepository diagnosisRepository,
-            MedicalRecordProcedureRepository procedureRepository
+            MedicalRecordProcedureRepository procedureRepository,
+            AppointmentPetshopRecordRepository petshopRecordRepository,
+            PrescriptionRepository prescriptionRepository,
+            PrescriptionItemRepository prescriptionItemRepository
     ) {
         this.appointmentRepository = appointmentRepository;
         this.petRepository = petRepository;
@@ -63,6 +68,9 @@ public class AppointmentService {
         this.medicalRecordRepository = medicalRecordRepository;
         this.diagnosisRepository = diagnosisRepository;
         this.procedureRepository = procedureRepository;
+        this.petshopRecordRepository = petshopRecordRepository;
+        this.prescriptionRepository = prescriptionRepository;
+        this.prescriptionItemRepository = prescriptionItemRepository;
     }
 
     @Transactional
@@ -211,10 +219,7 @@ public class AppointmentService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only OPEN appointments can be finished");
         }
 
-        if (current.getRole() == Role.VET) {
-            if (a.getAppointmentType() != AppointmentType.VET) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "VET users can finish only VET appointments");
-            }
+        if (current.getRole() == Role.VET && a.getAppointmentType() == AppointmentType.VET) {
             if (a.getVeterinarianUserId() != null && !a.getVeterinarianUserId().equals(current.getId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not the assigned veterinarian");
             }
@@ -230,8 +235,8 @@ public class AppointmentService {
     @Transactional
     public AppointmentResponse cancel(Long appointmentId, CancelAppointmentRequest req) {
         var current = AuthContext.requireUser();
-        if (current.getRole() != Role.ADMIN && current.getRole() != Role.RECEPTION) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only ADMIN/RECEPTION can cancel");
+        if (current.getRole() != Role.ADMIN && current.getRole() != Role.RECEPTION && current.getRole() != Role.VET) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only ADMIN/RECEPTION/VET can cancel");
         }
 
         var a = appointmentRepository.findById(appointmentId)
@@ -251,7 +256,7 @@ public class AppointmentService {
 
     @Transactional
     public MedicalRecordResponse upsertMedicalRecord(Long appointmentId, UpsertMedicalRecordRequest req) {
-        requireVetOrAdminAndAssigned(appointmentId);
+        var current = requireVetOrAdminAndAssigned(appointmentId);
 
         var mr = medicalRecordRepository.findByAppointmentId(appointmentId)
                 .orElseGet(() -> {
@@ -262,6 +267,19 @@ public class AppointmentService {
 
         if (req.chiefComplaint() != null) mr.setChiefComplaint(req.chiefComplaint());
         if (req.clinicalNotes() != null) mr.setClinicalNotes(req.clinicalNotes());
+        if (req.weightKg() != null) mr.setWeightKg(req.weightKg());
+        if (req.temperatureC() != null) mr.setTemperatureC(req.temperatureC());
+        if (req.heartRateBpm() != null) mr.setHeartRateBpm(req.heartRateBpm());
+        if (req.respiratoryRateRpm() != null) mr.setRespiratoryRateRpm(req.respiratoryRateRpm());
+        if (req.initialAssessment() != null) mr.setInitialAssessment(req.initialAssessment());
+        if (req.diagnosisSummary() != null) mr.setDiagnosisSummary(req.diagnosisSummary());
+        if (req.treatmentPlan() != null) mr.setTreatmentPlan(req.treatmentPlan());
+        if (req.usedMedications() != null) mr.setUsedMedications(req.usedMedications());
+        if (req.hospitalizationIndicated() != null) mr.setHospitalizationIndicated(req.hospitalizationIndicated());
+        if (req.hospitalizationNotes() != null) mr.setHospitalizationNotes(req.hospitalizationNotes());
+        if (req.dischargeInstructions() != null) mr.setDischargeInstructions(req.dischargeInstructions());
+        if (req.followUpAt() != null) mr.setFollowUpAt(req.followUpAt());
+        mr.setAttendedByUserId(current.getId());
 
         var saved = medicalRecordRepository.save(mr);
         return toMedicalRecordResponse(saved);
@@ -279,6 +297,111 @@ public class AppointmentService {
         var mr = medicalRecordRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Medical record not found"));
         return toMedicalRecordResponse(mr);
+    }
+
+    @Transactional(readOnly = true)
+    public PetshopRecordResponse getPetshopRecord(Long appointmentId) {
+        var current = AuthContext.requireUser();
+        if (current.getRole() != Role.ADMIN && current.getRole() != Role.RECEPTION && current.getRole() != Role.VET) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
+        }
+
+        var appointment = requirePetshopAppointment(appointmentId, false);
+        if (appointment.getStatus() != AppointmentStatus.OPEN && appointment.getStatus() != AppointmentStatus.FINISHED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Petshop record is available only for OPEN/FINISHED appointments");
+        }
+
+        var record = petshopRecordRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Petshop record not found"));
+
+        return toPetshopRecordResponse(record);
+    }
+
+    @Transactional
+    public PetshopRecordResponse upsertPetshopRecord(Long appointmentId, UpsertPetshopRecordRequest req) {
+        var current = AuthContext.requireUser();
+        if (current.getRole() != Role.ADMIN && current.getRole() != Role.RECEPTION && current.getRole() != Role.VET) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only ADMIN/RECEPTION/VET can edit petshop record");
+        }
+
+        var appointment = requirePetshopAppointment(appointmentId, true);
+        if (appointment.getStatus() != AppointmentStatus.OPEN) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only OPEN appointments can be edited");
+        }
+
+        var record = petshopRecordRepository.findByAppointmentId(appointmentId)
+                .orElseGet(() -> {
+                    var r = new AppointmentPetshopRecordEntity();
+                    r.setAppointmentId(appointmentId);
+                    return r;
+                });
+
+        if (req.serviceReport() != null) record.setServiceReport(req.serviceReport());
+        if (req.productsUsed() != null) record.setProductsUsed(req.productsUsed());
+        if (req.checkinNotes() != null) record.setCheckinNotes(req.checkinNotes());
+        if (req.checkoutNotes() != null) record.setCheckoutNotes(req.checkoutNotes());
+        if (req.startedAt() != null) record.setStartedAt(req.startedAt());
+        if (req.finishedAt() != null) record.setFinishedAt(req.finishedAt());
+        record.setAttendedByUserId(current.getId());
+
+        var saved = petshopRecordRepository.save(record);
+        return toPetshopRecordResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PrescriptionResponse> listPrescriptions(Long appointmentId) {
+        requireVetAppointmentRead(appointmentId);
+
+        var prescriptions = prescriptionRepository.findByAppointmentIdOrderByCreatedAtDesc(appointmentId);
+        if (prescriptions.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> prescriptionIds = prescriptions.stream().map(PrescriptionEntity::getId).toList();
+        var items = prescriptionItemRepository.findByPrescriptionIdIn(prescriptionIds);
+
+        Map<Long, List<PrescriptionItemEntity>> itemsByPrescriptionId = new HashMap<>();
+        for (var item : items) {
+            itemsByPrescriptionId.computeIfAbsent(item.getPrescriptionId(), k -> new ArrayList<>()).add(item);
+        }
+
+        return prescriptions.stream()
+                .map(p -> toPrescriptionResponse(p, itemsByPrescriptionId.getOrDefault(p.getId(), List.of())))
+                .toList();
+    }
+
+    @Transactional
+    public PrescriptionResponse createPrescription(Long appointmentId, CreatePrescriptionRequest req) {
+        var current = requireVetOrAdminAndAssigned(appointmentId);
+
+        var p = new PrescriptionEntity();
+        p.setAppointmentId(appointmentId);
+        p.setVeterinarianUserId(current.getRole() == Role.VET ? current.getId() : Optional.ofNullable(
+                appointmentRepository.findById(appointmentId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"))
+                        .getVeterinarianUserId()
+        ).orElse(current.getId()));
+        p.setTitle(blankToNull(req.title()));
+        p.setGuidance(blankToNull(req.guidance()));
+        p.setValidUntil(req.validUntil());
+
+        var savedPrescription = prescriptionRepository.save(p);
+
+        var entities = req.items().stream().map(item -> {
+            var e = new PrescriptionItemEntity();
+            e.setPrescriptionId(savedPrescription.getId());
+            e.setMedicationName(item.medicationName().trim());
+            e.setDosage(blankToNull(item.dosage()));
+            e.setFrequency(blankToNull(item.frequency()));
+            e.setDuration(blankToNull(item.duration()));
+            e.setRoute(blankToNull(item.route()));
+            e.setNotes(blankToNull(item.notes()));
+            return e;
+        }).toList();
+
+        var savedItems = prescriptionItemRepository.saveAll(entities);
+
+        return toPrescriptionResponse(savedPrescription, savedItems);
     }
 
     @Transactional
@@ -349,7 +472,7 @@ public class AppointmentService {
         procedureRepository.delete(p);
     }
 
-    private void requireVetOrAdminAndAssigned(Long appointmentId) {
+    private com.lucast.vetcare.auth.UserEntity requireVetOrAdminAndAssigned(Long appointmentId) {
         var current = AuthContext.requireUser();
         if (current.getRole() != Role.ADMIN && current.getRole() != Role.VET) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only ADMIN/VET can edit medical record");
@@ -367,6 +490,40 @@ public class AppointmentService {
         }
 
         if (current.getRole() == Role.VET && a.getVeterinarianUserId() != null && !a.getVeterinarianUserId().equals(current.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not the assigned veterinarian");
+        }
+        return current;
+    }
+
+    private AppointmentEntity requirePetshopAppointment(Long appointmentId, boolean writable) {
+        var appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+
+        if (appointment.getAppointmentType() != AppointmentType.PETSHOP) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Petshop record is available only for PETSHOP appointments");
+        }
+
+        if (writable && appointment.getStatus() != AppointmentStatus.OPEN) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only OPEN appointments can be edited");
+        }
+
+        return appointment;
+    }
+
+    private void requireVetAppointmentRead(Long appointmentId) {
+        var current = AuthContext.requireUser();
+        if (current.getRole() != Role.ADMIN && current.getRole() != Role.VET && current.getRole() != Role.RECEPTION) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
+        }
+
+        var appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+
+        if (appointment.getAppointmentType() != AppointmentType.VET) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prescription is available only for VET appointments");
+        }
+
+        if (current.getRole() == Role.VET && appointment.getVeterinarianUserId() != null && !appointment.getVeterinarianUserId().equals(current.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not the assigned veterinarian");
         }
     }
@@ -400,8 +557,58 @@ public class AppointmentService {
                 m.getAppointmentId(),
                 m.getChiefComplaint(),
                 m.getClinicalNotes(),
+                m.getAttendedByUserId(),
+                m.getWeightKg(),
+                m.getTemperatureC(),
+                m.getHeartRateBpm(),
+                m.getRespiratoryRateRpm(),
+                m.getInitialAssessment(),
+                m.getDiagnosisSummary(),
+                m.getTreatmentPlan(),
+                m.getUsedMedications(),
+                m.getHospitalizationIndicated(),
+                m.getHospitalizationNotes(),
+                m.getDischargeInstructions(),
+                m.getFollowUpAt(),
                 m.getCreatedAt(),
                 m.getUpdatedAt()
+        );
+    }
+
+    private PetshopRecordResponse toPetshopRecordResponse(AppointmentPetshopRecordEntity r) {
+        return new PetshopRecordResponse(
+                r.getId(),
+                r.getAppointmentId(),
+                r.getAttendedByUserId(),
+                r.getServiceReport(),
+                r.getProductsUsed(),
+                r.getCheckinNotes(),
+                r.getCheckoutNotes(),
+                r.getStartedAt(),
+                r.getFinishedAt(),
+                r.getCreatedAt(),
+                r.getUpdatedAt()
+        );
+    }
+
+    private PrescriptionResponse toPrescriptionResponse(PrescriptionEntity p, List<PrescriptionItemEntity> items) {
+        return new PrescriptionResponse(
+                p.getId(),
+                p.getAppointmentId(),
+                p.getVeterinarianUserId(),
+                p.getTitle(),
+                p.getGuidance(),
+                p.getValidUntil(),
+                p.getCreatedAt(),
+                items.stream().map(i -> new PrescriptionItemResponse(
+                        i.getId(),
+                        i.getMedicationName(),
+                        i.getDosage(),
+                        i.getFrequency(),
+                        i.getDuration(),
+                        i.getRoute(),
+                        i.getNotes()
+                )).toList()
         );
     }
 

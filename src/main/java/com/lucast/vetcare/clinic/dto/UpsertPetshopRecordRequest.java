@@ -1,0 +1,12 @@
+package com.lucast.vetcare.clinic.dto;
+
+import java.time.OffsetDateTime;
+
+public record UpsertPetshopRecordRequest(
+        String serviceReport,
+        String productsUsed,
+        String checkinNotes,
+        String checkoutNotes,
+        OffsetDateTime startedAt,
+        OffsetDateTime finishedAt
+) {}

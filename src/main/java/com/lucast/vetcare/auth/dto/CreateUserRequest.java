@@ -10,5 +10,8 @@ public record CreateUserRequest(
         @Email @NotBlank String email,
         @NotBlank String password,
         @NotBlank String confirmPassword,
-        @NotNull Role role
+        @NotNull Role role,
+        String professionalLicense,
+        String signatureImageBase64,
+        String signatureImageContentType
 ) {}

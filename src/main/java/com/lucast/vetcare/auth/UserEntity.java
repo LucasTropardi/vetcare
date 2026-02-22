@@ -33,6 +33,18 @@ public class UserEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "professional_license", length = 80)
+    private String professionalLicense;
+
+    @Column(name = "signature_image_base64", columnDefinition = "text")
+    private String signatureImageBase64;
+
+    @Column(name = "signature_image_content_type", length = 80)
+    private String signatureImageContentType;
+
+    @Column(name = "signature_updated_at")
+    private OffsetDateTime signatureUpdatedAt;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
