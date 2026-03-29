@@ -77,10 +77,10 @@ jobs:
             kubectl rollout status deployment vetcare
             echo "Deploy finalizado com sucesso."
 
-      - name: Delete old package versions
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: vetcare
-          package-type: container
-          min-versions-to-keep: 1
-          delete-only-untagged-versions: false
+#      - name: Delete old package versions
+#        uses: actions/delete-package-versions@v5
+#        with:
+#          package-name: vetcare
+#          package-type: container
+#          min-versions-to-keep: 1
+#          delete-only-untagged-versions: false
