@@ -29,8 +29,7 @@ public class CompanyService {
 
     @Transactional(readOnly = true)
     public CompanyProfileResponse getCurrentProfile() {
-        var company = companyRepository.findFirstByOrderByHeadquarterDescIdAsc()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Issuer company not found"));
+        var company = getCurrentCompanyOrThrow();
 
         return toProfileResponse(company);
     }
@@ -40,8 +39,7 @@ public class CompanyService {
         requireEditPermission();
 
         var now = OffsetDateTime.now();
-        var company = companyRepository.findFirstByOrderByHeadquarterDescIdAsc()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Issuer company not found"));
+        var company = getCurrentCompanyOrThrow();
 
         company.setLegalName(request.legalName());
         company.setTradeName(request.tradeName());
@@ -100,6 +98,12 @@ public class CompanyService {
         if (role != Role.ADMIN && role != Role.VET) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only ADMIN and VET can update company profile");
         }
+    }
+
+    private CompanyEntity getCurrentCompanyOrThrow() {
+        return companyRepository.findFirstByHeadquarterTrueOrderByIdAsc()
+                .or(() -> companyRepository.findFirstByOrderByIdAsc())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Issuer company not found"));
     }
 
     private CompanyProfileResponse toProfileResponse(CompanyEntity company) {

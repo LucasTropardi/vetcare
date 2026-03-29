@@ -2,6 +2,7 @@ package com.lucast.vetcare.catalog;
 
 import com.lucast.vetcare.catalog.dto.CreateProductRequest;
 import com.lucast.vetcare.catalog.dto.ProductListDTO;
+import com.lucast.vetcare.catalog.dto.ProductPosLookupDTO;
 import com.lucast.vetcare.catalog.dto.ProductResponse;
 import com.lucast.vetcare.catalog.dto.UpdateProductRequest;
 import com.lucast.vetcare.common.enums.ProductCategory;
@@ -53,6 +54,19 @@ public class ProductController {
             Pageable pageable
     ) {
         return queryService.list(name, category, active, pageable);
+    }
+
+    @GetMapping("/lookup")
+    @Operation(
+            summary = "Lookup products for POS",
+            description = "Searches products for POS flow by id, sku, GTIN/EAN or name"
+    )
+    public Page<ProductPosLookupDTO> lookupForPos(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "true") Boolean active,
+            Pageable pageable
+    ) {
+        return queryService.lookupForPos(query, active, pageable);
     }
 
     @GetMapping("/{id}")

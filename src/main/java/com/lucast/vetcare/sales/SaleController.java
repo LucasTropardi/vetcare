@@ -1,13 +1,25 @@
 package com.lucast.vetcare.sales;
 
+import com.lucast.vetcare.common.enums.SaleStatus;
 import com.lucast.vetcare.sales.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/sales")
@@ -33,6 +45,23 @@ public class SaleController {
         return service.create(req);
     }
 
+    @GetMapping
+    @Operation(
+            summary = "List sales",
+            description = "Lists sales with pagination and optional filters for period, status and customer search"
+    )
+    public Page<SaleListItemResponse> list(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) SaleStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @ParameterObject
+            @PageableDefault(size = 20)
+            Pageable pageable
+    ) {
+        return service.list(query, status, dateFrom, dateTo, pageable);
+    }
+
     @GetMapping("/{id}")
     @Operation(
             summary = "Get sale by ID",
@@ -40,6 +69,33 @@ public class SaleController {
     )
     public SaleResponse get(@PathVariable Long id) {
         return service.get(id);
+    }
+
+    @GetMapping("/{id}/receipt")
+    @Operation(
+            summary = "Get receipt preview",
+            description = "Returns the homologation/dev visual receipt for a confirmed sale"
+    )
+    public SaleReceiptResponse getReceipt(@PathVariable Long id) {
+        return service.getReceipt(id);
+    }
+
+    @GetMapping("/{id}/xml")
+    @Operation(
+            summary = "Download fiscal XML",
+            description = "Returns the latest fiscal XML generated for a confirmed sale"
+    )
+    public ResponseEntity<byte[]> downloadXml(@PathVariable Long id) {
+        String xml = service.getFiscalXml(id);
+        String filename = "sale-" + id + ".xml";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_XML);
+        headers.setContentDisposition(ContentDisposition.attachment().filename(filename, StandardCharsets.UTF_8).build());
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(xml.getBytes(StandardCharsets.UTF_8));
     }
 
     @GetMapping("/by-appointment")
@@ -120,6 +176,18 @@ public class SaleController {
     )
     public SaleResponse confirm(@PathVariable Long id) {
         return service.confirm(id);
+    }
+
+    @PostMapping("/{id}/checkout")
+    @Operation(
+            summary = "Finalize sale checkout",
+            description = "Registers payment lines, confirms the sale and returns a homologation/dev receipt"
+    )
+    public FinalizeSaleResponse checkout(
+            @PathVariable Long id,
+            @RequestBody @Valid FinalizeSaleRequest req
+    ) {
+        return service.checkout(id, req);
     }
 
     @PostMapping("/{id}/cancel")

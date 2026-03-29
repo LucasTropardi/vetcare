@@ -1,6 +1,7 @@
 package com.lucast.vetcare.catalog;
 
 import com.lucast.vetcare.catalog.dto.ProductListDTO;
+import com.lucast.vetcare.catalog.dto.ProductPosLookupDTO;
 import com.lucast.vetcare.catalog.spec.ProductSpecification;
 import com.lucast.vetcare.common.enums.ProductCategory;
 import org.springframework.data.domain.Page;
@@ -41,5 +42,14 @@ public class ProductQueryService {
                         p.getCostPrice(),
                         p.getMinStock()
                 ));
+    }
+
+    public Page<ProductPosLookupDTO> lookupForPos(String query, Boolean active, Pageable pageable) {
+        String normalized = query == null ? null : query.trim();
+        return repository.lookupForPos(
+                normalized == null || normalized.isBlank() ? null : normalized,
+                active,
+                pageable
+        );
     }
 }

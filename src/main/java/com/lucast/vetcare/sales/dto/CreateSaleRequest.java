@@ -7,5 +7,6 @@ public record CreateSaleRequest(
         Long tutorId,
         Long customerCompanyId,
         Long appointmentId,
+        Long cashRegisterId,
         String notes
 ) {}
